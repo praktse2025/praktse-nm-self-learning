@@ -39,6 +39,7 @@ pipeline {
         DOCKER_ARGS = "--tmpfs /.npm -v ${env.WORKSPACE}/build-caches/npm:${env.WORKSPACE}/.npm -v $HOME/build-caches/cache:/.cache -v $HOME/build-caches/nx:${env.WORKSPACE}/.nx"
     }
 
+
     options {
         ansiColor('xterm')
     }
