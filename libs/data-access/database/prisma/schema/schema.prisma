@@ -13,11 +13,12 @@ model OllamaCredentials {
     id           String         @id @default(uuid())
     token        String
     endpointUrl  String         @unique
-    OllamaModels OllamaModels[]
+    ollamaModels OllamaModels[]
 }
 
 model OllamaModels {
     id                  String            @id @default(uuid())
+	name				String
     ollamaCredentialsId String
     ollamaCredentials   OllamaCredentials @relation(fields: [ollamaCredentialsId], references: [id])
 }
