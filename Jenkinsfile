@@ -128,8 +128,7 @@ pipeline {
                              .insideSidecar("${NODE_DOCKER_IMAGE}", "${DOCKER_ARGS}") {
                                 sh 'npm run format:check'
                                 sh 'npm run seed'
-                                sh 'git fetch'
-                                sh "env TZ=${env.TZ} npx nx affected --base origin/${env.CHANGE_TARGET} -t lint test build e2e-ci"
+                                sh "git fetch && env TZ=${env.TZ} npx nx affected --base origin/${env.CHANGE_TARGET} -t lint test build e2e-ci"
                             }
                         }
                         ssedocker {
