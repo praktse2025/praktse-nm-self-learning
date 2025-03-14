@@ -1,8 +1,7 @@
 import { authProcedure, isCourseAuthorProcedure, t } from "../trpc";
-import * as z from "zod";
 import {database} from "@self-learning/database";
-import {OllamaModelsSchema} from "../../../../../../../apps/site/pages/admin/test";
-import {OllamaCredentialsSchema} from "../../../../../../../apps/site/pages/admin/test";
+import { OllamaCredentialsSchema, OllamaModelsSchema } from "@self-learning/types";
+
 
 export const ollamaConfigRouter = t.router({
 	addCredentials: t.procedure.input(OllamaCredentialsSchema).mutation(async ({ input, ctx }) => {
