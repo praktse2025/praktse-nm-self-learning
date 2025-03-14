@@ -137,16 +137,6 @@ pipeline {
                             }
                         }
                     }
-                    post {
-                        success {
-                            catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
-                                sshagent(['STM-SSH-DEMO']) {
-                                    sh "docker save ${env.TARGET_PREFIX}:${env.VERSION} | ssh -o StrictHostKeyChecking=no -l jenkins 147.172.178.45 'docker load'"
-                                }
-                                staging02ssh "python3 /opt/selflearn-branches/demo-manager.py new-container:${env.VERSION}:${env.BRANCH_NAME} generate-html"
-                            }
-                        }
-                    }
                 }
                 stage('Full build') {
                     when {
