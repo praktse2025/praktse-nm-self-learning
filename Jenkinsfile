@@ -91,7 +91,7 @@ pipeline {
                             withPostgres([dbUser: env.POSTGRES_USER, dbPassword: env.POSTGRES_PASSWORD, dbName: env.POSTGRES_DB])
                              .insideSidecar("${NODE_DOCKER_IMAGE}", "${DOCKER_ARGS}") {
                                     sh 'npm run seed' // this can be changed in the future to "npx prisma migrate reset" to test the migration files
-                                    sh "env TZ=${env.TZ} npx nx affected --base=${lastSuccessSHA} -t lint test build e2e-ci"
+                                   	sh 'env TZ=Europe/Berlin npx nx run-many --all --target=lint,test,build,e2e-ci'
                                 }
                         }
                         ssedocker {
