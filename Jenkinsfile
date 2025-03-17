@@ -1,5 +1,5 @@
 @Library('web-service-helper-lib') _
-
+//--
 pipeline {
     agent { label 'docker' }
     parameters {
@@ -83,7 +83,7 @@ pipeline {
                         script {
                             def projectName = env.JOB_NAME.split('/')[0]
                             def branchJobName = env.JOB_NAME.split('/')[1]
-                            def jobUrl = "${env.JENKINS_URL}job/${projectName}/job/${branchJobName}/lastSuccessfulBuild/git-2/api/json" // be aware /git/ is the git data of the Jenkins library
+                            def jobUrl = "${env.JENKINS_URL}job/${projectName}/job/${branchJobName}/lastSuccessfulBuild/api/json" // be aware /git/ is the git data of the Jenkins library
                             lastSuccessSHA = sh(
                                 script: "curl ${jobUrl} | jq '.lastBuiltRevision.SHA1'",
                                 returnStdout: true
@@ -128,22 +128,12 @@ pipeline {
                              .insideSidecar("${NODE_DOCKER_IMAGE}", "${DOCKER_ARGS}") {
                                 sh 'npm run format:check'
                                 sh 'npm run seed'
-                                sh "env TZ=${env.TZ} npx nx affected --base origin/${env.CHANGE_TARGET} -t lint test build e2e-ci"
+								sh 'env TZ=Europe/Berlin npx nx run-many --all --target=lint,test,build,e2e-ci'
                             }
                         }
                         ssedocker {
                             create {
                                 target "${env.TARGET_PREFIX}:${env.VERSION}"
-                            }
-                        }
-                    }
-                    post {
-                        success {
-                            catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
-                                sshagent(['STM-SSH-DEMO']) {
-                                    sh "docker save ${env.TARGET_PREFIX}:${env.VERSION} | ssh -o StrictHostKeyChecking=no -l jenkins 147.172.178.45 'docker load'"
-                                }
-                                staging02ssh "python3 /opt/selflearn-branches/demo-manager.py new-container:${env.VERSION}:${env.BRANCH_NAME} generate-html"
                             }
                         }
                     }
