@@ -81,13 +81,6 @@ pipeline {
                     }
                     steps {
                         script {
-                            def projectName = env.JOB_NAME.split('/')[0]
-                            def branchJobName = env.JOB_NAME.split('/')[1]
-                            def jobUrl = "${env.JENKINS_URL}job/${projectName}/job/${branchJobName}/lastSuccessfulBuild/api/json" // be aware /git/ is the git data of the Jenkins library
-                            lastSuccessSHA = sh(
-                                script: "curl ${jobUrl} | jq '.lastBuiltRevision.SHA1'",
-                                returnStdout: true
-                            ).trim()
                             withPostgres([dbUser: env.POSTGRES_USER, dbPassword: env.POSTGRES_PASSWORD, dbName: env.POSTGRES_DB])
                              .insideSidecar("${NODE_DOCKER_IMAGE}", "${DOCKER_ARGS}") {
                                     sh 'npm run seed' // this can be changed in the future to "npx prisma migrate reset" to test the migration files
