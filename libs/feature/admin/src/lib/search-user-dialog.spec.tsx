@@ -36,12 +36,6 @@ describe("searchUserDialog", () => {
 		};
 	});
 
-	it("shuld fail", () => {
-		const test = true;
-
-		expect(test).toBeFalsy();
-	});
-
 	it("should return user name in onClose", async () => {
 		// Arrange
 		const name = "NotAnAuthor";
