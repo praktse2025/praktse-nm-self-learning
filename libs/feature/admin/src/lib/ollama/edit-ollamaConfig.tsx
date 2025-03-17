@@ -37,7 +37,6 @@ async function getOllamaModels() {
 export function onModelSubmit(credentials: OllamaCredToggle[]) {
 	const { mutateAsync: addModel } = trpc.ollamaConfig.addModel.useMutation();
 	let firstRun = true;
-
 	credentials.forEach((cred: OllamaCredToggle) => {
 		cred.ollamaModels.forEach(model => {
 			if (model.toggle) {
@@ -99,34 +98,38 @@ export function OllamaModelForm({
 
 	return (
 		<div>
-			<div className="grid grid-cols-2 gap-4">
-				<ul className="absolute right-0 mt-2 w-48 py-2 bg-gray-50 border border-gray-300 rounded-lg shadow-lg z-10">
-					<FormProvider {...form}>
-						<form onSubmit={() => onSubmit(credentialsState)} data-testid={"OllamaModelForm"}>
+			<ul className="mt-2 py-2 bg-gray-50 border border-gray-300 rounded-lg shadow-lg z-10">
+				<FormProvider {...form}>
+					<form
+						onSubmit={() => onSubmit(credentialsState)}
+						data-testid="OllamaModelForm"
+					>
+						<div className="align-left gap-4">
 							{credentialsState.map((creds, credsIndex) => {
 								return creds.ollamaModels.map((model, modelIndex) => (
-									<li
-										key={model.id} // Use model.id as the key
-										className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+									<div
+										key={model.id}
+										className="p-2 align-left hover:bg-gray-100 cursor-pointer text-left"
 									>
 										<Toggle
-											data-testid={`toggle-button+${model.id}`} // Add a test ID for the toggle button
-											value={model.toggle} // Bind the toggle to the model's toggle value
+											data-testid={`toggle-button+${model.id}`}
+											value={model.toggle}
 											onChange={() =>
 												handleToggleChange(credsIndex, modelIndex)
-											} // Update the toggle on change
-											label={model.name} // Show the model name
+											}
+											label={model.name + " (" + creds.name + ")"}
 										/>
-									</li>
+									</div>
+
 								));
 							})}
-							<button type="submit" className="btn-primary w-full">
-								Speichern
-							</button>
-						</form>
-					</FormProvider>
-				</ul>
-			</div>
+						</div>
+						<button type="submit" className="btn-primary w-full mt-4">
+							Speichern
+						</button>
+					</form>
+				</FormProvider>
+			</ul>
 		</div>
 	);
 }

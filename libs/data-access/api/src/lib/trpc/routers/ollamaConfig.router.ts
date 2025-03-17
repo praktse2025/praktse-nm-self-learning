@@ -9,6 +9,7 @@ export const ollamaConfigRouter = t.router({
 			const created = await database.ollamaCredentials.create({
 				data: {
 					token: input.token,
+					name: input.name,
 					endpointUrl: input.endpointUrl,
 					// Correctly handle the relationship (assuming you want to link existing OllamaModels)
 					ollamaModels: {
@@ -25,6 +26,7 @@ export const ollamaConfigRouter = t.router({
 	}),
 	addModel: t.procedure.input(OllamaModelsSchema).mutation(async ({ input, ctx }) => {
 		if (ctx.user?.role === "ADMIN") {
+			database.ollamaModels.deleteMany();
 			const created = await database.ollamaModels.create({
 				data: {
 					name: input.name,

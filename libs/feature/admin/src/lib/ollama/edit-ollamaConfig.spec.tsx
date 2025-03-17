@@ -28,6 +28,7 @@ describe("OllamaModelForm", () => {
 		const dummyCredentials = [
 			{
 				id: "cred1",
+				name: "Peter",
 				endpointUrl: "",
 				token: "",
 				ollamaModels: [
@@ -66,6 +67,7 @@ describe("OllamaModelForm", () => {
 		const dummyCredentials = [
 			{
 				id: "cred1",
+				name: "Klaus",
 				endpointUrl: "",
 				token: "",
 				ollamaModels: [
@@ -119,6 +121,7 @@ describe("OllamaModelForm", () => {
 		const dummyCredentials = [
 			{
 				id: "cred1",
+				name: "Jan",
 				endpointUrl: "http://endpoint.net",
 				token: "token",
 				ollamaModels: [dummyModelA, dummyModelB]

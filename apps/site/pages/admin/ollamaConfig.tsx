@@ -11,6 +11,7 @@ export async function getCredentials() {
 	const credentials = await database.ollamaCredentials.findMany({
 		select: {
 			id: true,
+			name: true,
 			token: true,
 			endpointUrl: true,
 			ollamaModels: {
@@ -54,7 +55,8 @@ export default function OllamaConfigPage({ credentials }: { credentials: OllamaC
 	return (
 		<div className="bg-gray-50">
 			<center>
-				<div>
+				<div className={"grid grid-cols-2 flex-col"}>
+
 					<OllamaModelForm
 						credentials={credentials}
 						onSubmit={onModelSubmit}
