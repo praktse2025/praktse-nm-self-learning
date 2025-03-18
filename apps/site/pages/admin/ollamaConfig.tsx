@@ -1,8 +1,13 @@
-import React from "react";
+import React, {createContext, useState} from "react";
 import { database } from "@self-learning/database";
 import { GetServerSideProps } from "next";
 import { withAuth } from "../../../../libs/data-access/api/src/lib/auth/with-auth-ssr";
-import { OllamaModelForm, onModelSubmit } from "../../../../libs/feature/admin/src/lib/ollama/edit-ollamaConfig";
+import {
+	OllamaCredentialsForm,
+	OllamaModelForm, onCredentialsSubmit,
+	onModelSubmit, Credentials
+} from "../../../../libs/feature/admin/src/lib/ollama/edit-ollamaConfig";
+import { OllamaModels, } from "@prisma/client";
 
 export type OllamaCredToggle = Awaited<ReturnType<typeof getCredentials>>[number]
 
@@ -48,14 +53,16 @@ export const getServerSideProps: GetServerSideProps = withAuth(async (context, u
 	};
 });
 
-// The main component for the form
-
 // Page component
 export default function OllamaConfigPage({ credentials }: { credentials: OllamaCredToggle[] }) {
 	return (
 		<div className="bg-gray-50">
 			<center>
+				<div>
+					<Credentials credentials={credentials}/>
+				</div>
 				<div className={"grid grid-cols-2 flex-col"}>
+
 
 					<OllamaModelForm
 						credentials={credentials}

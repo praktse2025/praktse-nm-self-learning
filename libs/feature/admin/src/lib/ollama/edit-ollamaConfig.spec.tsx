@@ -1,6 +1,8 @@
 // edit-ollamaConfig.spec.tsx
-import { OllamaModelForm, onModelSubmit } from "./edit-ollamaConfig";
-import { fireEvent, render, screen } from "@testing-library/react";
+import {OllamaModelForm, onModelSubmit} from "./edit-ollamaConfig";
+import {OllamaCredentialsForm, onCredentialsSubmit} from "./edit-ollamaConfig";
+import {fireEvent, render, screen} from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 
 // Create a mocked mutation function
 const mockedMutateAsync = jest.fn();
@@ -17,6 +19,39 @@ jest.mock("@self-learning/api-client", () => ({
 		}
 	}
 }));
+
+describe("OllamaCredentialsForm", () => {
+
+	it("should call addCredentials when add button ist clicked", async () => {
+
+		const dummyCredentials =
+			{
+				id: "",
+				name: "TestModel1",
+				endpointUrl: "dfgfdg",
+				token: "toekn",
+			};
+
+		const onSubmitMock = jest.fn();
+
+		const renderedForm = render(<OllamaCredentialsForm onSubmit={onSubmitMock}/>);
+		const form = screen.getByTestId("OllamaCredentialsForm");
+
+		const credentialNameInput = screen.getByTestId("CredentialName")
+		const credentialTokenInput = screen.getByTestId("CredentialToken")
+		const credentialEndpointUrlInput = screen.getByTestId("CredentialUrl")
+
+		await userEvent.type(credentialNameInput, dummyCredentials.name)
+		await userEvent.type(credentialTokenInput, dummyCredentials.token)
+		await userEvent.type(credentialEndpointUrlInput, dummyCredentials.endpointUrl)
+
+		console.log(screen.getByTestId("CredentialName"))
+		fireEvent.submit(form);
+
+		expect(onSubmitMock).toHaveBeenCalledWith(dummyCredentials);
+		expect(onSubmitMock).toHaveBeenCalledTimes(1)
+	})
+})
 
 describe("OllamaModelForm", () => {
 	beforeEach(() => {
@@ -132,7 +167,7 @@ describe("OllamaModelForm", () => {
 
 		//Act
 
-		render(<OllamaModelForm credentials={dummyCredentials} onSubmit={onSubmitMock} />);
+		render(<OllamaModelForm credentials={dummyCredentials} onSubmit={onSubmitMock}/>);
 
 		const form = screen.getByTestId("OllamaModelForm");
 		fireEvent.submit(form);
