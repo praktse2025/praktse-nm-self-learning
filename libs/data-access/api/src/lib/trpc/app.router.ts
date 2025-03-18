@@ -22,6 +22,7 @@ import { subjectRouter } from "./routers/subject.router";
 import { userEventRouter } from "./routers/event-log.router";
 
 import { ollamaConfigRouter } from "./routers/ollamaConfig.router";
+import { ollamaRouter } from "./routers/ollama.router";
 
 export const appRouter = t.router({
 	admin: adminRouter,
@@ -42,7 +43,8 @@ export const appRouter = t.router({
 	programming: programmingRouter,
 	skill: skillRouter,
 	events: userEventRouter,
-	ollamaConfig: ollamaConfigRouter
+	ollamaConfig: ollamaConfigRouter,
+	ollama: ollamaRouter
 });
 
 // export type definition of API

@@ -1,15 +1,14 @@
 import React from "react";
 import { database } from "@self-learning/database";
 import { GetServerSideProps } from "next";
-import { withAuth } from "../../../../libs/data-access/api/src/lib/auth/with-auth-ssr";
+import { withAuth } from "@self-learning/api";
 import {
 	OllamaCredentialsForm,
 	OllamaModelForm,
-} from "../../../../libs/feature/admin/src/lib/ollama/edit-ollamaConfig";
+} from "@self-learning/admin";
 
 export type OllamaCredToggle = Awaited<ReturnType<typeof getCredentials>>[number];
 
-// Get credentials data from the database
 export async function getCredentials() {
 	const credentials = await database.ollamaCredentials.findMany({
 		select: {
@@ -40,7 +39,6 @@ export async function getCredentials() {
 	});
 }
 
-// Server side props with authentication
 export const getServerSideProps: GetServerSideProps = withAuth(async (context, user) => {
 	const credentials = await getCredentials();
 	// credentials.ollamaModels.append(getOllamaModels());
@@ -51,7 +49,6 @@ export const getServerSideProps: GetServerSideProps = withAuth(async (context, u
 	};
 });
 
-// Page component
 export default function OllamaConfigPage({ credentials }: { credentials: OllamaCredToggle[] }) {
 	return (
 		<div className="bg-gray-50">

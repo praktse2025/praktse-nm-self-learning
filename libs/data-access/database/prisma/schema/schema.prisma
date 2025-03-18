@@ -21,7 +21,7 @@ model OllamaModels {
     id                  String            @id @default(uuid())
     name                String
     ollamaCredentialsId String
-    ollamaCredentials   OllamaCredentials @relation(fields: [ollamaCredentialsId], references: [id])
+    ollamaCredentials   OllamaCredentials @relation(fields: [ollamaCredentialsId], references: [id], onDelete: Cascade)
 }
 
 model Student {
