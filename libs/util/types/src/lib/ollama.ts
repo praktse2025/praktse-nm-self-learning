@@ -18,7 +18,6 @@ export const OllamaCredentialsSchema = z.object({
 });
 
 export const OllamaCredentialsFormSchema = z.object({
-    id: z.string().uuid().nullable(),
 	name: z.string(),
 	token: z.string(),
 	endpointUrl: z.string().url(),

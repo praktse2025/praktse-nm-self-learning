@@ -26,7 +26,7 @@ export const ollamaConfigRouter = t.router({
 	}),
 	addModel: t.procedure.input(OllamaModelsSchema).mutation(async ({ input, ctx }) => {
 		if (ctx.user?.role === "ADMIN") {
-			database.ollamaModels.deleteMany();
+			await database.ollamaModels.deleteMany();
 			const created = await database.ollamaModels.create({
 				data: {
 					name: input.name,

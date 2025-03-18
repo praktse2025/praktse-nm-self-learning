@@ -1,6 +1,6 @@
 // edit-ollamaConfig.spec.tsx
-import {OllamaModelForm, onModelSubmit} from "./edit-ollamaConfig";
-import {OllamaCredentialsForm, onCredentialsSubmit} from "./edit-ollamaConfig";
+import {ControlledOllamaModelForm, onModelSubmit} from "./edit-ollamaConfig";
+import {ControlledOllamaCredentialsForm, onCredentialsSubmit} from "./edit-ollamaConfig";
 import {fireEvent, render, screen} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
@@ -34,7 +34,7 @@ describe("OllamaCredentialsForm", () => {
 
 		const onSubmitMock = jest.fn();
 
-		const renderedForm = render(<OllamaCredentialsForm onSubmit={onSubmitMock}/>);
+		const renderedForm = render(<ControlledOllamaCredentialsForm onSubmit={onSubmitMock}/>);
 		const form = screen.getByTestId("OllamaCredentialsForm");
 
 		const credentialNameInput = screen.getByTestId("CredentialName")
@@ -167,7 +167,7 @@ describe("OllamaModelForm", () => {
 
 		//Act
 
-		render(<OllamaModelForm credentials={dummyCredentials} onSubmit={onSubmitMock}/>);
+		render(<ControlledOllamaModelForm credentials={dummyCredentials} onSubmit={onSubmitMock}/>);
 
 		const form = screen.getByTestId("OllamaModelForm");
 		fireEvent.submit(form);

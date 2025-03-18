@@ -1,15 +1,14 @@
-import React, {createContext, useState} from "react";
+import React from "react";
 import { database } from "@self-learning/database";
 import { GetServerSideProps } from "next";
 import { withAuth } from "../../../../libs/data-access/api/src/lib/auth/with-auth-ssr";
 import {
 	OllamaCredentialsForm,
-	OllamaModelForm, onCredentialsSubmit,
-	onModelSubmit, Credentials
+	ControlledOllamaModelForm,
+	onModelSubmit, OllamaModelForm
 } from "../../../../libs/feature/admin/src/lib/ollama/edit-ollamaConfig";
-import { OllamaModels, } from "@prisma/client";
 
-export type OllamaCredToggle = Awaited<ReturnType<typeof getCredentials>>[number]
+export type OllamaCredToggle = Awaited<ReturnType<typeof getCredentials>>[number];
 
 // Get credentials data from the database
 export async function getCredentials() {
@@ -23,7 +22,7 @@ export async function getCredentials() {
 				select: {
 					id: true,
 					name: true,
-					ollamaCredentialsId: true,
+					ollamaCredentialsId: true
 				}
 			}
 		}
@@ -59,15 +58,10 @@ export default function OllamaConfigPage({ credentials }: { credentials: OllamaC
 		<div className="bg-gray-50">
 			<center>
 				<div>
-					<Credentials credentials={credentials}/>
+					<OllamaCredentialsForm credentials={credentials} />
 				</div>
 				<div className={"grid grid-cols-2 flex-col"}>
-
-
-					<OllamaModelForm
-						credentials={credentials}
-						onSubmit={onModelSubmit}
-					/>
+					<OllamaModelForm credentials={credentials} />
 				</div>
 			</center>
 		</div>
