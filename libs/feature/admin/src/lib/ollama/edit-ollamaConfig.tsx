@@ -14,7 +14,7 @@ type CredentialsFormData = {
 	endpointUrl: string;
 };
 
-function ControlledOllamaCredentialsForm({ onSubmit }: { onSubmit: (data: CredentialsFormData) => void }) {
+export function ControlledOllamaCredentialsForm({ onSubmit }: { onSubmit: (data: CredentialsFormData) => void }) {
 	const form = useForm({
 		resolver: zodResolver(OllamaCredentialsFormSchema),
 		defaultValues: {
@@ -64,7 +64,7 @@ function ControlledOllamaCredentialsForm({ onSubmit }: { onSubmit: (data: Creden
 	);
 }
 
-export function OllamaCredentialsForm({ credentials }: { credentials: OllamaCredToggle[] }) {
+export function OllamaCredentialsForm() {
 	const { mutateAsync: addCredentials } = trpc.ollamaConfig.addCredentials.useMutation();
 
 	async function onSubmit(data: CredentialsFormData) {
@@ -94,7 +94,7 @@ export function OllamaCredentialsForm({ credentials }: { credentials: OllamaCred
 	}
 
 	return (
-		<div>
+		<div className="mt-2 py-2 bg-gray-50 border border-gray-300 rounded-lg shadow-lg z-10">
 			<ControlledOllamaCredentialsForm onSubmit={onSubmit} />
 		</div>
 	);
@@ -139,7 +139,7 @@ export function OllamaModelForm({ credentials }: { credentials: OllamaCredToggle
 	}
 
 	return (
-		<div>
+		<div className="mt-2 py-2 bg-gray-50 border border-gray-300 rounded-lg shadow-lg z-10">
 			<ControlledOllamaModelForm
 				credentials={credentials}
 				onSubmit={onSubmit}
@@ -148,7 +148,7 @@ export function OllamaModelForm({ credentials }: { credentials: OllamaCredToggle
 	);
 }
 
-function ControlledOllamaModelForm({
+export function ControlledOllamaModelForm({
 	credentials,
 	onSubmit
 }: {
@@ -182,7 +182,7 @@ function ControlledOllamaModelForm({
 
 	return (
 		<div>
-			<ul className="mt-2 py-2 bg-gray-50 border border-gray-300 rounded-lg shadow-lg z-10">
+			<ul>
 				<FormProvider {...form}>
 					<form
 						onSubmit={e => {
@@ -191,13 +191,11 @@ function ControlledOllamaModelForm({
 						}}
 						data-testid="OllamaModelForm"
 					>
-						<div className="align-left gap-4">
+						<div>
 							{credentialsState.map((creds, credsIndex) =>
 								creds.ollamaModels.map((model, modelIndex) => (
 									<div
-										key={model.id}
-										className="p-2 align-left hover:bg-gray-100 cursor-pointer text-left"
-									>
+										key={model.id}>
 										<Toggle
 											data-testid={`toggle-button+${model.id}`}
 											value={model.toggle}

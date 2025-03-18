@@ -1,11 +1,17 @@
 // edit-ollamaConfig.spec.tsx
-import {ControlledOllamaModelForm, onModelSubmit} from "./edit-ollamaConfig";
-import {ControlledOllamaCredentialsForm, onCredentialsSubmit} from "./edit-ollamaConfig";
-import {fireEvent, render, screen} from "@testing-library/react";
+
+import {fireEvent, render, screen, waitFor} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import {
+	ControlledOllamaCredentialsForm,
+	ControlledOllamaModelForm,
+	OllamaCredentialsForm,
+	OllamaModelForm
+} from "./edit-ollamaConfig";
 
 // Create a mocked mutation function
-const mockedMutateAsync = jest.fn();
+const addModelMock = jest.fn();
+const addCredentialMock = jest.fn();
 
 // Fully mock the TRPC hook so that useMutation returns our mock
 jest.mock("@self-learning/api-client", () => ({
@@ -13,7 +19,12 @@ jest.mock("@self-learning/api-client", () => ({
 		ollamaConfig: {
 			addModel: {
 				useMutation: () => ({
-					mutateAsync: mockedMutateAsync
+					mutateAsync: addModelMock
+				})
+			},
+			addCredentials: {
+				useMutation: () => ({
+					mutateAsync: addCredentialMock
 				})
 			}
 		}
@@ -21,20 +32,23 @@ jest.mock("@self-learning/api-client", () => ({
 }));
 
 describe("OllamaCredentialsForm", () => {
-
+	beforeEach(() => {
+		addCredentialMock.mockClear();
+	});
 	it("should call addCredentials when add button ist clicked", async () => {
+
 
 		const dummyCredentials =
 			{
-				id: "",
+				id: null,
 				name: "TestModel1",
-				endpointUrl: "dfgfdg",
-				token: "toekn",
+				token: "234234334",
+				endpointUrl: "http://test.de",
+				ollamaModels: []
 			};
 
-		const onSubmitMock = jest.fn();
 
-		const renderedForm = render(<ControlledOllamaCredentialsForm onSubmit={onSubmitMock}/>);
+		const renderedForm = render(<OllamaCredentialsForm />);
 		const form = screen.getByTestId("OllamaCredentialsForm");
 
 		const credentialNameInput = screen.getByTestId("CredentialName")
@@ -45,25 +59,27 @@ describe("OllamaCredentialsForm", () => {
 		await userEvent.type(credentialTokenInput, dummyCredentials.token)
 		await userEvent.type(credentialEndpointUrlInput, dummyCredentials.endpointUrl)
 
-		console.log(screen.getByTestId("CredentialName"))
 		fireEvent.submit(form);
+		await waitFor(() => {
+				expect(addCredentialMock).toHaveBeenCalledTimes(1)
+				expect(addCredentialMock).toHaveBeenCalledWith(dummyCredentials)
+			});
+		});
 
-		expect(onSubmitMock).toHaveBeenCalledWith(dummyCredentials);
-		expect(onSubmitMock).toHaveBeenCalledTimes(1)
 	})
-})
+
 
 describe("OllamaModelForm", () => {
 	beforeEach(() => {
-		mockedMutateAsync.mockClear();
+		addModelMock.mockClear();
 	});
 
-	it("should call addModel when a single model is toggled true", () => {
+	it("Should call addModel with model B after toggling", async () => {
 		// Arrange: One credentials object with one toggled model.
 		const dummyCredentials = [
 			{
 				id: "cred1",
-				name: "Peter",
+				name: "Klaus",
 				endpointUrl: "",
 				token: "",
 				ollamaModels: [
@@ -71,7 +87,7 @@ describe("OllamaModelForm", () => {
 						id: "modelA",
 						name: "Model A",
 						ollamaCredentialsId: "cred1",
-						toggle: true // Only this model is toggled true.
+						toggle: true
 					},
 					{
 						id: "modelB",
@@ -83,22 +99,26 @@ describe("OllamaModelForm", () => {
 			}
 		];
 
-		// Act
-		onModelSubmit(dummyCredentials);
 
-		// Assert: Expect addModel to be called exactly once.
-		expect(mockedMutateAsync).toHaveBeenCalledTimes(1);
-		expect(mockedMutateAsync).toHaveBeenCalledWith(
-			expect.objectContaining({
-				id: "modelA",
-				name: "Model A",
-				ollamaCredentialsId: "cred1"
-			})
-		);
+		const renderedForm = render(<OllamaModelForm credentials={dummyCredentials}/>);
+		const form = screen.getByTestId("OllamaModelForm");
+
+		const checkboxes = screen.getAllByRole("checkbox");
+		const modelInputA = checkboxes[0];
+		const modelInputB = checkboxes[1];
+
+		await userEvent.click(modelInputB);
+		await userEvent.click(modelInputA);
+
+		fireEvent.submit(form);
+		await waitFor(() => {
+			expect(addModelMock).toHaveBeenCalledTimes(1)
+			expect(addModelMock).toHaveBeenCalledWith(dummyCredentials[0].ollamaModels[0])
+		});
 	});
 
-	it("should call addModel only once even if two models are toggled true in the same credentials", () => {
-		// Arrange: One credentials object with two models toggled true.
+	it("should call addModel only once even if two models are toggled true in the same credentials", async () => {
+		// Arrange: One credentials object with one toggled model.
 		const dummyCredentials = [
 			{
 				id: "cred1",
@@ -122,58 +142,14 @@ describe("OllamaModelForm", () => {
 			}
 		];
 
-		// Act
-		onModelSubmit(dummyCredentials);
 
-		// Assert: Even though two models are toggled true,
-		expect(mockedMutateAsync).toHaveBeenCalledTimes(1);
-		// Optionally, you can check that the call was made with the first toggled model's data.
-		expect(mockedMutateAsync).toHaveBeenCalledWith(
-			expect.objectContaining({
-				id: "modelA",
-				name: "Model A",
-				ollamaCredentialsId: "cred1"
-			})
-		);
-	});
-
-	it("should call onSubmit on Speicher-Button press", async () => {
-		//Arrange
-		const dummyModelA = {
-			id: "modelA",
-			name: "Model A",
-			ollamaCredentialsId: "cred1",
-			toggle: true // Only this model is toggled true.
-		};
-
-		const dummyModelB = {
-			id: "modelB",
-			name: "Model B",
-			ollamaCredentialsId: "cred1",
-			toggle: false
-		};
-
-		const dummyCredentials = [
-			{
-				id: "cred1",
-				name: "Jan",
-				endpointUrl: "http://endpoint.net",
-				token: "token",
-				ollamaModels: [dummyModelA, dummyModelB]
-			}
-		];
-
-		const onSubmitMock = jest.fn();
-
-		//Act
-
-		render(<ControlledOllamaModelForm credentials={dummyCredentials} onSubmit={onSubmitMock}/>);
-
+		const renderedForm = render(<OllamaModelForm credentials={dummyCredentials}/>);
 		const form = screen.getByTestId("OllamaModelForm");
+
 		fireEvent.submit(form);
-
-		//Assert
-
-		expect(onSubmitMock).toHaveBeenCalledWith(dummyCredentials);
+		await waitFor(() => {
+			expect(addModelMock).toHaveBeenCalledTimes(1)
+			expect(addModelMock).toHaveBeenCalledWith(dummyCredentials[0].ollamaModels[0])
+		});
 	});
 });

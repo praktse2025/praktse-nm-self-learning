@@ -1,8 +1,11 @@
 import React from "react";
 import { database } from "@self-learning/database";
 import { GetServerSideProps } from "next";
-import { withAuth } from "@self-learning/api";
-import { OllamaCredentialsForm, OllamaModelForm } from "@self-learning/admin";
+import { withAuth } from "../../../../libs/data-access/api/src/lib/auth/with-auth-ssr";
+import {
+	OllamaCredentialsForm,
+	OllamaModelForm,
+} from "../../../../libs/feature/admin/src/lib/ollama/edit-ollamaConfig";
 
 export type OllamaCredToggle = Awaited<ReturnType<typeof getCredentials>>[number];
 
@@ -53,11 +56,13 @@ export default function OllamaConfigPage({ credentials }: { credentials: OllamaC
 	return (
 		<div className="bg-gray-50">
 			<center>
-				<div>
-					<OllamaCredentialsForm credentials={credentials} />
-				</div>
-				<div className={"grid grid-cols-2 flex-col"}>
-					<OllamaModelForm credentials={credentials} />
+				<div className="grid h-screen grid-cols-2">
+					<div>
+						<OllamaCredentialsForm/>
+					</div>
+					<div className={"grid grid-cols-2 flex-col"}>
+						<OllamaModelForm credentials={credentials} />
+					</div>
 				</div>
 			</center>
 		</div>
