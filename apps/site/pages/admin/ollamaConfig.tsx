@@ -2,7 +2,7 @@ import React from "react";
 import { database } from "@self-learning/database";
 import { GetServerSideProps } from "next";
 import { withAuth } from "@self-learning/api";
-import { OllamaCredentialsForm, OllamaModelForm } from "@self-learning/admin";
+import { CredentialSection, OllamaCredentialsFormDialog, OllamaModelForm } from "@self-learning/admin";
 import { getAvailableOllamaModels } from "data-access/ollama";
 
 export type OllamaCredToggle = Awaited<ReturnType<typeof getCredentials>>[number];
@@ -72,17 +72,20 @@ export const getServerSideProps: GetServerSideProps = withAuth(async (context, u
 
 export default function OllamaConfigPage({ credentials }: { credentials: OllamaCredToggle[] }) {
 	return (
-		<div className="bg-gray-50">
-			<center>
-				<div className="grid h-screen grid-cols-2">
-					<div>
-						<OllamaCredentialsForm />
-					</div>
-					<div className={"grid grid-cols-2 flex-col"}>
-						<OllamaModelForm credentials={credentials} />
+		<div className="bg-gray-50 flex items-center justify-center h-screen">
+			<div className="grid grid-cols-3 gap-4 w-10/12 max-w-screen-md items-center">
+				{/* Left Side - Credentials Form */}
+				<div className="col-span-2 flex justify-center">
+					<div className="w-11/12">
+						<CredentialSection credentials={credentials} />
 					</div>
 				</div>
-			</center>
+
+				{/* Right Side - Model Selection, Centered */}
+				<div className="flex justify-center">
+					<OllamaModelForm credentials={credentials} />
+				</div>
+			</div>
 		</div>
 	);
 }

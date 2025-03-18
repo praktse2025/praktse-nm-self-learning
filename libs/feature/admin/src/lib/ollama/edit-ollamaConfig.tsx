@@ -3,10 +3,10 @@ import { trpc } from "@self-learning/api-client";
 import { FormProvider, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { showToast, Toggle } from "@self-learning/ui/common";
+import { Dialog, GreyBoarderButton, showToast, Toggle } from "@self-learning/ui/common";
 import { OllamaCredentialsFormSchema, OllamaModelsSchema } from "@self-learning/types";
-import { LabeledField } from "@self-learning/ui/forms";
 import { OllamaCredToggle } from "../../../../../../apps/site/pages/admin/ollamaConfig";
+import { LabeledField } from "@self-learning/ui/forms";
 
 type CredentialsFormData = {
 	name: string;
@@ -14,7 +14,21 @@ type CredentialsFormData = {
 	endpointUrl: string;
 };
 
-export function ControlledOllamaCredentialsForm({ onSubmit }: { onSubmit: (data: CredentialsFormData) => void }) {
+export function CredentialSection({ credentials }: { credentials: OllamaCredToggle[] }) {
+	return (
+		<div>
+			<OllamaCredentialsFormDialog />
+		</div>
+	);
+}
+
+export function ControlledOllamaCredentialsFormDialog({
+	onSubmit
+}: {
+	onSubmit: (data: CredentialsFormData) => void;
+}) {
+	const [dialogOpen, setDialogOpen] = useState<boolean>(true);
+
 	const form = useForm({
 		resolver: zodResolver(OllamaCredentialsFormSchema),
 		defaultValues: {
@@ -24,50 +38,64 @@ export function ControlledOllamaCredentialsForm({ onSubmit }: { onSubmit: (data:
 		}
 	});
 
-	const handleSubmit = form.handleSubmit(onSubmit);
+	function submit(data: CredentialsFormData) {
+		onSubmit(data);
+		setDialogOpen(false);
+	}
+
+	const handleSubmit = form.handleSubmit(submit);
 
 	return (
-		<FormProvider {...form}>
-			<form data-testid="OllamaCredentialsForm" onSubmit={handleSubmit}>
-				<LabeledField label="Name">
-					<input
-						{...form.register("name")}
-						type="text"
-						className="textfield"
-						placeholder="Name des Servers"
-						data-testid="CredentialName"
-					/>
-				</LabeledField>
-				<LabeledField label="Token">
-					<input
-						{...form.register("token")}
-						type="text"
-						className="textfield"
-						placeholder="Token"
-						data-testid="CredentialToken"
-					/>
-				</LabeledField>
-				<LabeledField label="Endpoint-URL">
-					<input
-						{...form.register("endpointUrl")}
-						type="text"
-						className="textfield"
-						placeholder="URL des Servers"
-						data-testid="CredentialUrl"
-					/>
-				</LabeledField>
-				<button className="btn-primary" type="submit">
-					Speichern
-				</button>
-			</form>
-		</FormProvider>
+		dialogOpen && (
+			<Dialog onClose={() => setDialogOpen(false)} title={"Server hinzufügen"}>
+				<FormProvider {...form}>
+					<form data-testid="OllamaCredentialsForm" onSubmit={handleSubmit}>
+						<LabeledField label="Name">
+							<input
+								{...form.register("name")}
+								type="text"
+								className="textfield"
+								placeholder="Name des Servers"
+								data-testid="CredentialName"
+							/>
+						</LabeledField>
+						<LabeledField label="Token">
+							<input
+								{...form.register("token")}
+								type="text"
+								className="textfield"
+								placeholder="Token"
+								data-testid="CredentialToken"
+							/>
+						</LabeledField>
+						<LabeledField label="Endpoint-URL">
+							<input
+								{...form.register("endpointUrl")}
+								type="text"
+								className="textfield"
+								placeholder="URL des Servers"
+								data-testid="CredentialUrl"
+							/>
+						</LabeledField>
+
+						<GreyBoarderButton onClick={() => setDialogOpen(false)}>
+							<span className={"text-gray-600"}>Abbrechen</span>
+						</GreyBoarderButton>
+						<button className="btn-primary" type="submit">
+							Speichern
+						</button>
+					</form>
+				</FormProvider>
+			</Dialog>
+		)
 	);
 }
 
-export function OllamaCredentialsForm() {
+export function OllamaCredentialsFormDialog() {
 	const { mutateAsync: addCredentials } = trpc.ollamaConfig.addCredentials.useMutation();
 
 	async function onSubmit(data: CredentialsFormData) {
+		console.log("fjslgdklshgkfdhjk");
 
 		const updatedData = {
 			id: null,
@@ -94,14 +122,14 @@ export function OllamaCredentialsForm() {
 	}
 
 	return (
-		<div className="mt-2 py-2 bg-gray-50 border border-gray-300 rounded-lg shadow-lg z-10">
-			<ControlledOllamaCredentialsForm onSubmit={onSubmit} />
+		<div>
+			<ControlledOllamaCredentialsFormDialog onSubmit={onSubmit} />
 		</div>
 	);
 }
 
 export function OllamaModelForm({ credentials }: { credentials: OllamaCredToggle[] }) {
-	const { mutateAsync: addModel} = trpc.ollamaConfig.addModel.useMutation();
+	const { mutateAsync: addModel } = trpc.ollamaConfig.addModel.useMutation();
 
 	async function onSubmit(credentials: OllamaCredToggle[]) {
 		let firstRun = true;
@@ -139,11 +167,8 @@ export function OllamaModelForm({ credentials }: { credentials: OllamaCredToggle
 	}
 
 	return (
-		<div className="mt-2 py-2 bg-gray-50 border border-gray-300 rounded-lg shadow-lg z-10">
-			<ControlledOllamaModelForm
-				credentials={credentials}
-				onSubmit={onSubmit}
-			/>
+		<div>
+			<ControlledOllamaModelForm credentials={credentials} onSubmit={onSubmit} />
 		</div>
 	);
 }
@@ -194,8 +219,7 @@ export function ControlledOllamaModelForm({
 						<div>
 							{credentialsState.map((creds, credsIndex) =>
 								creds.ollamaModels.map((model, modelIndex) => (
-									<div
-										key={model.id}>
+									<div key={model.id}>
 										<Toggle
 											data-testid={`toggle-button+${model.id}`}
 											value={model.toggle}

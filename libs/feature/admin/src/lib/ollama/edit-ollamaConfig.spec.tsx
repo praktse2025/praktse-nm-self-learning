@@ -3,9 +3,9 @@
 import {fireEvent, render, screen, waitFor} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {
-	ControlledOllamaCredentialsForm,
+	ControlledOllamaCredentialsFormDialog,
 	ControlledOllamaModelForm,
-	OllamaCredentialsForm,
+	OllamaCredentialsFormDialog,
 	OllamaModelForm
 } from "./edit-ollamaConfig";
 
@@ -48,7 +48,7 @@ describe("OllamaCredentialsForm", () => {
 			};
 
 
-		const renderedForm = render(<OllamaCredentialsForm />);
+		const renderedForm = render(<OllamaCredentialsFormDialog />);
 		const form = screen.getByTestId("OllamaCredentialsForm");
 
 		const credentialNameInput = screen.getByTestId("CredentialName")
