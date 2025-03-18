@@ -2,10 +2,8 @@ import React from "react";
 import { database } from "@self-learning/database";
 import { GetServerSideProps } from "next";
 import { withAuth } from "@self-learning/api";
-import {
-	OllamaCredentialsForm,
-	OllamaModelForm,
-} from "@self-learning/admin";
+import { OllamaCredentialsForm, OllamaModelForm } from "@self-learning/admin";
+import { getAvailableOllamaModels } from "data-access/ollama";
 
 export type OllamaCredToggle = Awaited<ReturnType<typeof getCredentials>>[number];
 
@@ -32,7 +30,8 @@ export async function getCredentials() {
 			ollamaModels: creds.ollamaModels.map(model => {
 				return {
 					...model,
-					toggle: false
+					id: model.id || null,
+					toggle: true
 				};
 			})
 		};
@@ -41,10 +40,32 @@ export async function getCredentials() {
 
 export const getServerSideProps: GetServerSideProps = withAuth(async (context, user) => {
 	const credentials = await getCredentials();
-	// credentials.ollamaModels.append(getOllamaModels());
+
+	for (const cred of credentials) {
+		const availableModels = await getAvailableOllamaModels(cred.endpointUrl, cred.token);
+
+		if (!availableModels) {
+			console.log("Failed to fetch models for credential:", cred.name);
+			continue;
+		}
+
+		const existingModelNames = new Set(cred.ollamaModels.map(model => model.name));
+
+		const newModels = availableModels
+			.filter(modelName => !existingModelNames.has(modelName))
+			.map(modelName => ({
+				id: null,
+				name: modelName,
+				ollamaCredentialsId: cred.id,
+				toggle: false
+			}));
+
+		cred.ollamaModels.push(...newModels);
+	}
+
 	return {
 		props: {
-			credentials // Pass the credentials data as a prop to your page
+			credentials
 		}
 	};
 });
@@ -55,7 +76,7 @@ export default function OllamaConfigPage({ credentials }: { credentials: OllamaC
 			<center>
 				<div className="grid h-screen grid-cols-2">
 					<div>
-						<OllamaCredentialsForm/>
+						<OllamaCredentialsForm />
 					</div>
 					<div className={"grid grid-cols-2 flex-col"}>
 						<OllamaModelForm credentials={credentials} />
