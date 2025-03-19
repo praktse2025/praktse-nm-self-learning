@@ -100,7 +100,7 @@ describe("OllamaModelForm", () => {
 		];
 
 
-		const renderedForm = render(<OllamaModelForm credentials={dummyCredentials}/>);
+		const renderedForm = render(<OllamaModelForm />);
 		const form = screen.getByTestId("OllamaModelForm");
 
 		const checkboxes = screen.getAllByRole("checkbox");
@@ -143,7 +143,7 @@ describe("OllamaModelForm", () => {
 		];
 
 
-		const renderedForm = render(<OllamaModelForm credentials={dummyCredentials}/>);
+		const renderedForm = render(<OllamaModelForm/>);
 		const form = screen.getByTestId("OllamaModelForm");
 
 		fireEvent.submit(form);

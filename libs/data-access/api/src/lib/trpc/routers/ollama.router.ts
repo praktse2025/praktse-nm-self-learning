@@ -29,24 +29,4 @@ export const ollamaRouter = t.router({
 				return { success: false, response: null };
 			}
 		}),
-	getModels: authProcedure.query(async ({ ctx }) => {
-		if (!ctx.user) {
-			console.log("[ollamaRouter.getModels] Unauthorized access attempt.");
-			return { success: false, models: null };
-		}
-
-		try {
-			const models = await getAvailableOllamaModels();
-
-			if (!models) {
-				console.error("[ollamaRouter.getModels] Failed to fetch available models.");
-				return { success: false, models: null };
-			}
-
-			return { success: true, models };
-		} catch (error) {
-			console.error("[ollamaRouter.getModels] Error fetching models:", error);
-			return { success: false, models: null };
-		}
-	})
 });

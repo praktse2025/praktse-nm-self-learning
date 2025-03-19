@@ -1,11 +1,11 @@
-import React, { useState } from "react";
+import React, {createContext, useContext, useState} from "react";
 import { trpc } from "@self-learning/api-client";
 import { FormProvider, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Dialog, GreyBoarderButton, showToast, Toggle } from "@self-learning/ui/common";
 import { OllamaCredentialsFormSchema, OllamaModelsSchema } from "@self-learning/types";
-import { OllamaCredToggle } from "../../../../../../apps/site/pages/admin/ollamaConfig";
+import {OllamaCredToggle, useCredentialsContext} from "../../../../../../apps/site/pages/admin/ollamaConfig";
 import { LabeledField } from "@self-learning/ui/forms";
 
 type CredentialsFormData = {
@@ -15,35 +15,33 @@ type CredentialsFormData = {
 	endpointUrl: string;
 };
 
-export function CredentialSection({ credentials }: { credentials: CredentialsFormData[] }) {
+export function CredentialSection() {
 	const { mutateAsync: removeCredentialFromDB } =
 		trpc.ollamaConfig.removeCredentials.useMutation();
 
-	const [credentialState, setCredentialState] = useState<CredentialsFormData[]>(credentials);
-
-	function addCredential(data: CredentialsFormData) {
-		setCredentialState([...credentialState, data]); // Add new credential
-	}
+	const {credentials, setCredentials} = useCredentialsContext();
 
 	function removeCredential(data: CredentialsFormData) {
-		setCredentialState(credentialState.filter(cred => cred.name !== data.name)); // Remove by name
+		setCredentials(credentials.filter(cred => cred.name !== data.name)); // Remove by name
 	}
 
 	function handleRemove(index: number) {
-		const credToRemove = credentialState[index];
+		const credToRemove = credentials[index];
 		removeCredential(credToRemove);
+		console.log("1111111")
 		removeCredentialFromDB({ id: credToRemove.id });
+		console.log("22222222")
 	}
 
 	return (
 		<div className="space-y-4">
 			<div className="flex items-center justify-between">
 				<h2 className="font-semibold text-lg text-gray-900">Credentials</h2>
-				<OllamaCredentialsFormDialog addCredential={addCredential} />
+				<OllamaCredentialsFormDialog />
 			</div>
 
 			<div className="space-y-2">
-				{credentialState.map((credential, index) => (
+				{credentials.map((credential, index) => (
 					<div
 						key={index}
 						className="flex items-center justify-between border rounded-lg p-3 shadow-sm bg-white"
@@ -75,23 +73,27 @@ export function CredentialSection({ credentials }: { credentials: CredentialsFor
 
 export function ControlledOllamaCredentialsFormDialog({
 	onSubmit,
-	addCredential
 }: {
 	onSubmit: (data: CredentialsFormData) => void;
-	addCredential: (cred: CredentialsFormData) => void;
 }) {
 	const [dialogOpen, setDialogOpen] = useState<boolean>(false);
 
+	const {credentials, setCredentials} = useCredentialsContext();
+	function addCredential(data: OllamaCredToggle) {
+		setCredentials([...credentials, data]); // Add new credential
+	}
 	const form = useForm({
 		resolver: zodResolver(OllamaCredentialsFormSchema),
 		defaultValues: {
+			id: "",
 			name: "",
 			token: "",
-			endpointUrl: ""
+			endpointUrl: "",
+			ollamaModels: []
 		}
 	});
 
-	function submit(data: CredentialsFormData) {
+	function submit(data: OllamaCredToggle) {
 		onSubmit(data);
 		addCredential(data);
 		setDialogOpen(false);
@@ -156,11 +158,7 @@ export function ControlledOllamaCredentialsFormDialog({
 	);
 }
 
-export function OllamaCredentialsFormDialog({
-	addCredential
-}: {
-	addCredential: (cred: CredentialsFormData) => void;
-}) {
+export function OllamaCredentialsFormDialog() {
 	const { mutateAsync: addCredentials } = trpc.ollamaConfig.addCredentials.useMutation();
 
 	async function onSubmit(data: CredentialsFormData) {
@@ -192,14 +190,15 @@ export function OllamaCredentialsFormDialog({
 		<div>
 			<ControlledOllamaCredentialsFormDialog
 				onSubmit={onSubmit}
-				addCredential={addCredential}
 			/>
 		</div>
 	);
 }
 
-export function OllamaModelForm({ credentials }: { credentials: OllamaCredToggle[] }) {
+export function OllamaModelForm() {
 	const { mutateAsync: addModel } = trpc.ollamaConfig.addModel.useMutation();
+
+	const {credentials} = useCredentialsContext();
 
 	async function onSubmit(credentials: OllamaCredToggle[]) {
 		let firstRun = true;
