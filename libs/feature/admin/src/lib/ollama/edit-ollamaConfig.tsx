@@ -9,25 +9,78 @@ import { OllamaCredToggle } from "../../../../../../apps/site/pages/admin/ollama
 import { LabeledField } from "@self-learning/ui/forms";
 
 type CredentialsFormData = {
+	id: string;
 	name: string;
 	token: string;
 	endpointUrl: string;
 };
 
-export function CredentialSection({ credentials }: { credentials: OllamaCredToggle[] }) {
+export function CredentialSection({ credentials }: { credentials: CredentialsFormData[] }) {
+	const { mutateAsync: removeCredentialFromDB } =
+		trpc.ollamaConfig.removeCredentials.useMutation();
+
+	const [credentialState, setCredentialState] = useState<CredentialsFormData[]>(credentials);
+
+	function addCredential(data: CredentialsFormData) {
+		setCredentialState([...credentialState, data]); // Add new credential
+	}
+
+	function removeCredential(data: CredentialsFormData) {
+		setCredentialState(credentialState.filter(cred => cred.name !== data.name)); // Remove by name
+	}
+
+	function handleRemove(index: number) {
+		const credToRemove = credentialState[index];
+		removeCredential(credToRemove);
+		removeCredentialFromDB({ id: credToRemove.id });
+	}
+
 	return (
-		<div>
-			<OllamaCredentialsFormDialog />
+		<div className="space-y-4">
+			<div className="flex items-center justify-between">
+				<h2 className="font-semibold text-lg text-gray-900">Credentials</h2>
+				<OllamaCredentialsFormDialog addCredential={addCredential} />
+			</div>
+
+			<div className="space-y-2">
+				{credentialState.map((credential, index) => (
+					<div
+						key={index}
+						className="flex items-center justify-between border rounded-lg p-3 shadow-sm bg-white"
+					>
+						<div className="flex items-center space-x-3">
+							<div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
+								<span className="text-gray-700 font-semibold">
+									{credential.name.charAt(0).toUpperCase()}
+								</span>
+							</div>
+							<div>
+								<p className="font-medium text-gray-900">{credential.name}</p>
+								<p className="text-sm text-gray-500">{credential.endpointUrl}</p>
+							</div>
+						</div>
+
+						<button
+							className="text-gray-400 hover:text-red-600"
+							onClick={() => handleRemove(index)}
+						>
+							✕
+						</button>
+					</div>
+				))}
+			</div>
 		</div>
 	);
 }
 
 export function ControlledOllamaCredentialsFormDialog({
-	onSubmit
+	onSubmit,
+	addCredential
 }: {
 	onSubmit: (data: CredentialsFormData) => void;
+	addCredential: (cred: CredentialsFormData) => void;
 }) {
-	const [dialogOpen, setDialogOpen] = useState<boolean>(true);
+	const [dialogOpen, setDialogOpen] = useState<boolean>(false);
 
 	const form = useForm({
 		resolver: zodResolver(OllamaCredentialsFormSchema),
@@ -40,64 +93,77 @@ export function ControlledOllamaCredentialsFormDialog({
 
 	function submit(data: CredentialsFormData) {
 		onSubmit(data);
+		addCredential(data);
 		setDialogOpen(false);
 	}
 
 	const handleSubmit = form.handleSubmit(submit);
 
 	return (
-		dialogOpen && (
-			<Dialog onClose={() => setDialogOpen(false)} title={"Server hinzufügen"}>
-				<FormProvider {...form}>
-					<form data-testid="OllamaCredentialsForm" onSubmit={handleSubmit}>
-						<LabeledField label="Name">
-							<input
-								{...form.register("name")}
-								type="text"
-								className="textfield"
-								placeholder="Name des Servers"
-								data-testid="CredentialName"
-							/>
-						</LabeledField>
-						<LabeledField label="Token">
-							<input
-								{...form.register("token")}
-								type="text"
-								className="textfield"
-								placeholder="Token"
-								data-testid="CredentialToken"
-							/>
-						</LabeledField>
-						<LabeledField label="Endpoint-URL">
-							<input
-								{...form.register("endpointUrl")}
-								type="text"
-								className="textfield"
-								placeholder="URL des Servers"
-								data-testid="CredentialUrl"
-							/>
-						</LabeledField>
+		<div>
+			<div>
+				<button onClick={() => setDialogOpen(true)} className="btn-primary">
+					Server hinzufügen
+				</button>
+			</div>
+			<div>
+				{dialogOpen && (
+					<Dialog onClose={() => setDialogOpen(false)} title={"Server hinzufügen"}>
+						<FormProvider {...form}>
+							<form data-testid="OllamaCredentialsForm" onSubmit={handleSubmit}>
+								<LabeledField label="Name">
+									<input
+										{...form.register("name")}
+										type="text"
+										className="textfield"
+										placeholder="Name des Servers"
+										data-testid="CredentialName"
+									/>
+								</LabeledField>
+								<LabeledField label="Token">
+									<input
+										{...form.register("token")}
+										type="text"
+										className="textfield"
+										placeholder="Token"
+										data-testid="CredentialToken"
+									/>
+								</LabeledField>
+								<LabeledField label="Endpoint-URL">
+									<input
+										{...form.register("endpointUrl")}
+										type="text"
+										className="textfield"
+										placeholder="URL des Servers"
+										data-testid="CredentialUrl"
+									/>
+								</LabeledField>
 
-						<GreyBoarderButton onClick={() => setDialogOpen(false)}>
-							<span className={"text-gray-600"}>Abbrechen</span>
-						</GreyBoarderButton>
-						<button className="btn-primary" type="submit">
-							Speichern
-						</button>
-					</form>
-				</FormProvider>
-			</Dialog>
-		)
+								<div className="flex justify-between w-full py-4">
+									<GreyBoarderButton onClick={() => setDialogOpen(false)}>
+										<span className="text-gray-600">Abbrechen</span>
+									</GreyBoarderButton>
+									<button className="btn-primary" type="submit">
+										Speichern
+									</button>
+								</div>
+							</form>
+						</FormProvider>
+					</Dialog>
+				)}
+			</div>
+		</div>
 	);
 }
 
-export function OllamaCredentialsFormDialog() {
+export function OllamaCredentialsFormDialog({
+	addCredential
+}: {
+	addCredential: (cred: CredentialsFormData) => void;
+}) {
 	const { mutateAsync: addCredentials } = trpc.ollamaConfig.addCredentials.useMutation();
-	const { mutateAsync: removeCredentials } = trpc.ollamaConfig.removeCredentials.useMutation();
 
 	async function onSubmit(data: CredentialsFormData) {
-		console.log("fjslgdklshgkfdhjk");
-
 		const updatedData = {
 			id: null,
 			name: data.name,
@@ -124,10 +190,10 @@ export function OllamaCredentialsFormDialog() {
 
 	return (
 		<div>
-			<button className="btn-primary" onClick={() => removeCredentials({id: "8ae7a7b4-8b82-46ab-b23f-9506fd08e060"})}>
-				remove
-			</button>
-			<ControlledOllamaCredentialsFormDialog onSubmit={onSubmit} />
+			<ControlledOllamaCredentialsFormDialog
+				onSubmit={onSubmit}
+				addCredential={addCredential}
+			/>
 		</div>
 	);
 }
@@ -138,7 +204,7 @@ export function OllamaModelForm({ credentials }: { credentials: OllamaCredToggle
 	async function onSubmit(credentials: OllamaCredToggle[]) {
 		let firstRun = true;
 
-		for (const cred of credentials) {x
+		for (const cred of credentials) {
 			for (const model of cred.ollamaModels) {
 				if (model.toggle) {
 					if (!firstRun) {
@@ -211,6 +277,11 @@ export function ControlledOllamaModelForm({
 
 	return (
 		<div>
+			{/* Label for the Left Side */}
+			<div className="flex items-center justify-between pb-4">
+				<h2 className="font-semibold text-lg text-gray-900">Modelle</h2>
+			</div>
+
 			<ul>
 				<FormProvider {...form}>
 					<form
@@ -223,7 +294,10 @@ export function ControlledOllamaModelForm({
 						<div>
 							{credentialsState.map((creds, credsIndex) =>
 								creds.ollamaModels.map((model, modelIndex) => (
-									<div key={model.id}>
+									<div
+										key={model.id}
+										className="flex items-center space-x-4 py-2"
+									>
 										<Toggle
 											data-testid={`toggle-button+${model.id}`}
 											value={model.toggle}

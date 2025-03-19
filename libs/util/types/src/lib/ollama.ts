@@ -20,8 +20,8 @@ export const OllamaCredentialsSchema = z.object({
 export const OllamaCredentialsFormSchema = z.object({
 	name: z.string(),
 	token: z.string(),
-	endpointUrl: z.string()
-})
+	endpointUrl: z.string().url()
+});
 
 // Zod schema for OllamaModels model
 export const OllamaModelsSchema = z.object({
