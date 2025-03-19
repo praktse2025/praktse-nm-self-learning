@@ -93,6 +93,7 @@ export function ControlledOllamaCredentialsFormDialog({
 
 export function OllamaCredentialsFormDialog() {
 	const { mutateAsync: addCredentials } = trpc.ollamaConfig.addCredentials.useMutation();
+	const { mutateAsync: removeCredentials } = trpc.ollamaConfig.removeCredentials.useMutation();
 
 	async function onSubmit(data: CredentialsFormData) {
 		console.log("fjslgdklshgkfdhjk");
@@ -123,6 +124,9 @@ export function OllamaCredentialsFormDialog() {
 
 	return (
 		<div>
+			<button className="btn-primary" onClick={() => removeCredentials({id: "8ae7a7b4-8b82-46ab-b23f-9506fd08e060"})}>
+				remove
+			</button>
 			<ControlledOllamaCredentialsFormDialog onSubmit={onSubmit} />
 		</div>
 	);
@@ -134,7 +138,7 @@ export function OllamaModelForm({ credentials }: { credentials: OllamaCredToggle
 	async function onSubmit(credentials: OllamaCredToggle[]) {
 		let firstRun = true;
 
-		for (const cred of credentials) {
+		for (const cred of credentials) {x
 			for (const model of cred.ollamaModels) {
 				if (model.toggle) {
 					if (!firstRun) {

@@ -1,6 +1,7 @@
 import { authProcedure, t } from "../trpc";
 import { database } from "@self-learning/database";
 import { OllamaCredentialsSchema, OllamaModelsSchema } from "@self-learning/types";
+import {z} from "zod";
 
 export const ollamaConfigRouter = t.router({
 	addCredentials: authProcedure
@@ -51,5 +52,24 @@ export const ollamaConfigRouter = t.router({
 			console.error("Error adding Ollama model:", error);
 			return null;
 		}
-	})
+	}),
+
+	removeCredentials: authProcedure
+		.input(z.object({id: z.string()}))
+		.mutation(async ({ input, ctx }) => {
+			if (ctx.user?.role !== "ADMIN") {
+				console.log("Unauthorized access attempt to remove credentials.");
+				return null;
+			}
+			console.log(input.id);
+
+			try {
+				return await database.ollamaCredentials.delete({
+					where: { id: input.id }
+				});
+			} catch (error) {
+				console.error("Error removing Ollama credentials:", error);
+				return null;
+			}
+		}),
 });
