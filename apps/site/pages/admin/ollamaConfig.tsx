@@ -1,7 +1,7 @@
 import React, {createContext, useContext, useState} from "react";
 import { database } from "@self-learning/database";
 import { GetServerSideProps } from "next";
-import { withAuth } from "@self-learning/api";
+import {withAuth} from "../../../../libs/data-access/api/src/lib/auth/with-auth-ssr";
 import { CredentialSection, OllamaModelForm } from "@self-learning/admin";
 import { getAvailableOllamaModels } from "data-access/ollama";
 

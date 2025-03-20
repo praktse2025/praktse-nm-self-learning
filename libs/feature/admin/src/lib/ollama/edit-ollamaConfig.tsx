@@ -28,9 +28,7 @@ export function CredentialSection() {
 	function handleRemove(index: number) {
 		const credToRemove = credentials[index];
 		removeCredential(credToRemove);
-		console.log("1111111")
 		removeCredentialFromDB({ id: credToRemove.id });
-		console.log("22222222")
 	}
 
 	return (
@@ -196,9 +194,8 @@ export function OllamaCredentialsFormDialog() {
 }
 
 export function OllamaModelForm() {
+	const {credentials, setCredentials} = useCredentialsContext();
 	const { mutateAsync: addModel } = trpc.ollamaConfig.addModel.useMutation();
-
-	const {credentials} = useCredentialsContext();
 
 	async function onSubmit(credentials: OllamaCredToggle[]) {
 		let firstRun = true;
@@ -237,19 +234,17 @@ export function OllamaModelForm() {
 
 	return (
 		<div>
-			<ControlledOllamaModelForm credentials={credentials} onSubmit={onSubmit} />
+			<ControlledOllamaModelForm onSubmit={onSubmit}/>
 		</div>
 	);
 }
 
 export function ControlledOllamaModelForm({
-	credentials,
 	onSubmit
 }: {
-	credentials: OllamaCredToggle[];
 	onSubmit: (credentials: OllamaCredToggle[]) => void;
 }) {
-	const [credentialsState, setCredentialState] = useState(credentials);
+	const {credentials, setCredentials} = useCredentialsContext();
 
 	const form = useForm({
 		resolver: zodResolver(z.array(OllamaModelsSchema)),
@@ -264,14 +259,14 @@ export function ControlledOllamaModelForm({
 	});
 
 	const handleToggleChange = (credsIndex: number, modelIndex: number) => {
-		const updatedCredentials = credentialsState.map(creds => {
+		const updatedCredentials = credentials.map(creds => {
 			creds.ollamaModels.forEach(model => {
 				model.toggle = false; // Reset all toggles to false
 			});
 			return creds;
 		});
 		updatedCredentials[credsIndex].ollamaModels[modelIndex].toggle = true;
-		setCredentialState([...updatedCredentials]);
+		setCredentials([...updatedCredentials]);
 	};
 
 	return (
@@ -286,12 +281,12 @@ export function ControlledOllamaModelForm({
 					<form
 						onSubmit={e => {
 							e.preventDefault();
-							onSubmit(credentialsState);
+							onSubmit(credentials);
 						}}
 						data-testid="OllamaModelForm"
 					>
 						<div>
-							{credentialsState.map((creds, credsIndex) =>
+							{credentials.map((creds, credsIndex) =>
 								creds.ollamaModels.map((model, modelIndex) => (
 									<div
 										key={model.id}
