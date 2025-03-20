@@ -3,7 +3,7 @@ import { database } from "@self-learning/database";
 import { GetServerSideProps } from "next";
 import {withAuth} from "../../../../libs/data-access/api/src/lib/auth/with-auth-ssr";
 import { CredentialSection, OllamaModelForm } from "@self-learning/admin";
-import { getAvailableOllamaModels } from "data-access/ollama";
+import {getAvailableOllamaModels} from "../../../../libs/data-access/api-client/src/lib/ollama";
 
 type CredentialsContextType = {
 	credentials: OllamaCredToggle[];
