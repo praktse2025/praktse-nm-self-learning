@@ -1,4 +1,4 @@
-import React, {createContext, useContext, useState} from "react";
+import React, {useState} from "react";
 import {trpc} from "@self-learning/api-client";
 import {FormProvider, useForm} from "react-hook-form";
 import {zodResolver} from "@hookform/resolvers/zod";
@@ -51,7 +51,7 @@ export function CredentialSection() {
 								</span>
 							</div>
 							<div>
-								<p className="font-medium text-gray-900">{credential.ollamaModels ? credential.name : credential.name.charAt(0).toUpperCase() + "(empty)"}</p>
+								<p className="font-medium text-gray-900">{credential.name}</p>
 								<p className="text-sm text-gray-500">{credential.endpointUrl}</p>
 							</div>
 						</div>
@@ -184,7 +184,7 @@ export function OllamaCredentialsFormDialog() {
 				showToast({
 					type: "error",
 					title: "Fehler",
-					subtitle: "Fehler beim Speichern der Daten"
+					subtitle: "Der Server mit der URL ist bereits vorhanden"
 				});
 			}
 			return trpcReturn;
