@@ -1,6 +1,6 @@
 import { authProcedure, t } from "../trpc";
-import { chatWithOllama, getAvailableOllamaModels } from "data-access/ollama";
 import { z } from "zod";
+import {chatWithOllama} from "../../../../../api-client/src/lib/ollama";
 
 export const ollamaRouter = t.router({
 	chat: authProcedure
