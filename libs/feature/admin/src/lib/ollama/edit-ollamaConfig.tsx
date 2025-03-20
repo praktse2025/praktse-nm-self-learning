@@ -1,12 +1,12 @@
 import React, {createContext, useContext, useState} from "react";
-import { trpc } from "@self-learning/api-client";
-import { FormProvider, useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import {trpc} from "@self-learning/api-client";
+import {FormProvider, useForm} from "react-hook-form";
+import {zodResolver} from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Dialog, GreyBoarderButton, showToast, Toggle } from "@self-learning/ui/common";
-import { OllamaCredentialsFormSchema, OllamaModelsSchema } from "@self-learning/types";
+import {Dialog, GreyBoarderButton, showToast, Toggle} from "@self-learning/ui/common";
+import {OllamaCredentialsFormSchema, OllamaModelsSchema} from "@self-learning/types";
 import {OllamaCredToggle, useCredentialsContext} from "../../../../../../apps/site/pages/admin/ollamaConfig";
-import { LabeledField } from "@self-learning/ui/forms";
+import {LabeledField} from "@self-learning/ui/forms";
 
 type CredentialsFormData = {
 	id: string;
@@ -16,7 +16,7 @@ type CredentialsFormData = {
 };
 
 export function CredentialSection() {
-	const { mutateAsync: removeCredentialFromDB } =
+	const {mutateAsync: removeCredentialFromDB} =
 		trpc.ollamaConfig.removeCredentials.useMutation();
 
 	const {credentials, setCredentials} = useCredentialsContext();
@@ -28,14 +28,14 @@ export function CredentialSection() {
 	function handleRemove(index: number) {
 		const credToRemove = credentials[index];
 		removeCredential(credToRemove);
-		removeCredentialFromDB({ id: credToRemove.id });
+		removeCredentialFromDB({id: credToRemove.id});
 	}
 
 	return (
 		<div className="space-y-4">
 			<div className="flex items-center justify-between">
 				<h2 className="font-semibold text-lg text-gray-900">Credentials</h2>
-				<OllamaCredentialsFormDialog />
+				<OllamaCredentialsFormDialog/>
 			</div>
 
 			<div className="space-y-2">
@@ -51,7 +51,7 @@ export function CredentialSection() {
 								</span>
 							</div>
 							<div>
-								<p className="font-medium text-gray-900">{credential.name}</p>
+								<p className="font-medium text-gray-900">{credential.ollamaModels ? credential.name : credential.name.charAt(0).toUpperCase() + "(empty)"}</p>
 								<p className="text-sm text-gray-500">{credential.endpointUrl}</p>
 							</div>
 						</div>
@@ -70,16 +70,18 @@ export function CredentialSection() {
 }
 
 export function ControlledOllamaCredentialsFormDialog({
-	onSubmit,
-}: {
-	onSubmit: (data: CredentialsFormData) => void;
+														  onSubmit,
+													  }: {
+	onSubmit: (data: CredentialsFormData) => object;
 }) {
 	const [dialogOpen, setDialogOpen] = useState<boolean>(false);
 
 	const {credentials, setCredentials} = useCredentialsContext();
+
 	function addCredential(data: OllamaCredToggle) {
 		setCredentials([...credentials, data]); // Add new credential
 	}
+
 	const form = useForm({
 		resolver: zodResolver(OllamaCredentialsFormSchema),
 		defaultValues: {
@@ -91,9 +93,11 @@ export function ControlledOllamaCredentialsFormDialog({
 		}
 	});
 
-	function submit(data: OllamaCredToggle) {
-		onSubmit(data);
-		addCredential(data);
+	async function submit(data: OllamaCredToggle) {
+		const submitReturn = await onSubmit(data);
+		if (submitReturn) {
+			addCredential(data);
+		}
 		setDialogOpen(false);
 	}
 
@@ -157,7 +161,7 @@ export function ControlledOllamaCredentialsFormDialog({
 }
 
 export function OllamaCredentialsFormDialog() {
-	const { mutateAsync: addCredentials } = trpc.ollamaConfig.addCredentials.useMutation();
+	const {mutateAsync: addCredentials} = trpc.ollamaConfig.addCredentials.useMutation();
 
 	async function onSubmit(data: CredentialsFormData) {
 		const updatedData = {
@@ -169,18 +173,28 @@ export function OllamaCredentialsFormDialog() {
 		};
 
 		try {
-			await addCredentials(updatedData);
-			showToast({
-				type: "success",
-				title: "Erfolg",
-				subtitle: "Anmeldeinformationen gespeichert"
-			});
+			const trpcReturn = await addCredentials(updatedData);
+			if (trpcReturn) {
+				showToast({
+					type: "success",
+					title: "Erfolg",
+					subtitle: "Anmeldeinformationen gespeichert"
+				});
+			} else {
+				showToast({
+					type: "error",
+					title: "Fehler",
+					subtitle: "Fehler beim Speichern der Daten"
+				});
+			}
+			return trpcReturn;
 		} catch (error) {
 			showToast({
 				type: "error",
 				title: "Fehler",
 				subtitle: "Fehler beim Speichern der Daten"
 			});
+			return null;
 		}
 	}
 
@@ -195,7 +209,7 @@ export function OllamaCredentialsFormDialog() {
 
 export function OllamaModelForm() {
 	const {credentials, setCredentials} = useCredentialsContext();
-	const { mutateAsync: addModel } = trpc.ollamaConfig.addModel.useMutation();
+	const {mutateAsync: addModel} = trpc.ollamaConfig.addModel.useMutation();
 
 	async function onSubmit(credentials: OllamaCredToggle[]) {
 		let firstRun = true;
@@ -240,16 +254,16 @@ export function OllamaModelForm() {
 }
 
 export function ControlledOllamaModelForm({
-	onSubmit
-}: {
+											  onSubmit
+										  }: {
 	onSubmit: (credentials: OllamaCredToggle[]) => void;
 }) {
-	const {credentials, setCredentials} = useCredentialsContext();
+	const {credentials = [], setCredentials} = useCredentialsContext();
 
 	const form = useForm({
 		resolver: zodResolver(z.array(OllamaModelsSchema)),
 		defaultValues: credentials.map(creds => ({
-			ollamaModels: creds.ollamaModels.map(model => ({
+			ollamaModels: creds.ollamaModels?.map(model => ({
 				id: model.id,
 				name: model.name,
 				ollamaCredentialsId: model.ollamaCredentialsId,
@@ -286,23 +300,23 @@ export function ControlledOllamaModelForm({
 						data-testid="OllamaModelForm"
 					>
 						<div>
-							{credentials.map((creds, credsIndex) =>
-								creds.ollamaModels.map((model, modelIndex) => (
-									<div
-										key={model.id}
-										className="flex items-center space-x-4 py-2"
-									>
-										<Toggle
-											data-testid={`toggle-button+${model.id}`}
-											value={model.toggle}
-											onChange={() =>
-												handleToggleChange(credsIndex, modelIndex)
-											}
-											label={`${model.name} (${creds.name})`}
-										/>
-									</div>
-								))
-							)}
+							{(credentials).map((creds, credsIndex) =>
+								(creds.ollamaModels?.map((model, modelIndex) => (
+										<div
+											key={model.id}
+											className="flex items-center space-x-4 py-2"
+										>
+											<Toggle
+												data-testid={`toggle-button+${model.id}`}
+												value={model.toggle}
+												onChange={() =>
+													handleToggleChange(credsIndex, modelIndex)
+												}
+												label={`${model.name} (${creds.name})`}
+											/>
+										</div>
+									))
+								))}
 						</div>
 						<button type="submit" className="btn-primary w-full mt-4">
 							Speichern
