@@ -1,7 +1,6 @@
-import React, {createContext, useContext, useState} from "react";
-import { database } from "@self-learning/database";
+import React, { useState } from "react";
 import { GetServerSideProps } from "next";
-import {withAuth} from "../../../../libs/data-access/api/src/lib/auth/with-auth-ssr";
+import { withAuth } from "@self-learning/api";
 import {
 	CredentialsContext,
 	CredentialSection,
@@ -9,20 +8,23 @@ import {
 	OllamaCredToggle,
 	OllamaModelForm
 } from "@self-learning/admin";
-import {getAvailableOllamaModels} from "../../../../libs/data-access/api-client/src/lib/ollama";
+import { getAvailableModelsOnEndpoint } from "../../../../libs/data-access/api-client/src/lib/ollama";
 
 export const getServerSideProps: GetServerSideProps = withAuth(async (context, user) => {
 	const credentials = await getCredentials();
 
 	const updatedCredentials = await Promise.all(
-		credentials.map(async (cred) => {
-			const availableModels = await getAvailableOllamaModels(cred.endpointUrl, cred.token);
+		credentials.map(async cred => {
+			const availableModels = await getAvailableModelsOnEndpoint(
+				cred.endpointUrl,
+				cred.token
+			);
 
 			if (!availableModels) {
 				cred = {
 					...cred,
 					available: false
-				}
+				};
 				return cred; // Return the original credential if fetch fails
 			}
 
@@ -55,7 +57,9 @@ export const getServerSideProps: GetServerSideProps = withAuth(async (context, u
 export default function OllamaConfigPage({ credentials }: { credentials: OllamaCredToggle[] }) {
 	const [credentialsState, setCredentialsState] = useState<OllamaCredToggle[]>(credentials);
 	return (
-		<CredentialsContext.Provider value={{credentials: credentialsState, setCredentials: setCredentialsState}}>
+		<CredentialsContext.Provider
+			value={{ credentials: credentialsState, setCredentials: setCredentialsState }}
+		>
 			<div className="bg-gray-50 flex items-center justify-center h-screen">
 				<div className="grid grid-cols-3 gap-4 w-10/12 max-w-screen-md items-center">
 					<div className="col-span-2 flex justify-center">

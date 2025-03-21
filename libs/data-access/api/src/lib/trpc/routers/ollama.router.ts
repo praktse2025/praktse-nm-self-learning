@@ -1,6 +1,6 @@
 import { authProcedure, t } from "../trpc";
 import { z } from "zod";
-import {chatWithOllama} from "../../../../../api-client/src/lib/ollama";
+import {chatWithLLM} from "../../../../../api-client/src/lib/ollama";
 
 export const ollamaRouter = t.router({
 	chat: authProcedure
@@ -16,7 +16,7 @@ export const ollamaRouter = t.router({
 			}
 
 			try {
-				const response = await chatWithOllama(input.message);
+				const response = await chatWithLLM(input.message);
 
 				if (!response) {
 					console.error("[ollamaRouter.chat] Failed to get response from Ollama.");
