@@ -1,6 +1,6 @@
 import { authProcedure, t } from "../trpc";
 import { z } from "zod";
-import {chatWithLLM} from "../../../../../api-client/src/lib/ollama";
+import { chatWithLLM, getAvailableModelsOnEndpoint } from "@self-learning/api-client";
 
 export const ollamaRouter = t.router({
 	chat: authProcedure
@@ -29,4 +29,23 @@ export const ollamaRouter = t.router({
 				return { success: false, response: null };
 			}
 		}),
+	models: authProcedure
+		.input(
+			z.object({
+				endpointUrl: z.string().url("Invalid URL format"),
+				token: z.string().min(1, "Token cannot be empty.")
+			})
+		)
+		.mutation(async ({ input }) => {
+			try {
+				const models = await getAvailableModelsOnEndpoint(input.endpointUrl, input.token);
+				if (!models) {
+					return { success: false, models: [] };
+				}
+				return { success: true, models };
+			} catch (error) {
+				console.error("[ollamaRouter.models] Error fetching models:", error);
+				return { success: false, models: [] };
+			}
+		})
 });

@@ -8,7 +8,7 @@ import {
 	OllamaCredToggle,
 	OllamaModelForm
 } from "@self-learning/admin";
-import { getAvailableModelsOnEndpoint } from "../../../../libs/data-access/api-client/src/lib/ollama";
+import { getAvailableModelsOnEndpoint } from "@self-learning/api-client";
 
 export const getServerSideProps: GetServerSideProps = withAuth(async (context, user) => {
 	const credentials = await getCredentials();

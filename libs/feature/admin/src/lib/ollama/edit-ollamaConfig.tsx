@@ -3,11 +3,18 @@ import { trpc } from "@self-learning/api-client";
 import { FormProvider, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Dialog, GreyBoarderButton, showToast, Toggle } from "@self-learning/ui/common";
+import {
+	Dialog,
+	GreyBoarderButton,
+	OutlinedIconButton,
+	showToast,
+	Toggle
+} from "@self-learning/ui/common";
 import { OllamaCredentialsFormSchema, OllamaModelsSchema } from "@self-learning/types";
 import { LabeledField } from "@self-learning/ui/forms";
 import { database } from "@self-learning/database";
-import { ExclamationTriangleIcon } from "@heroicons/react/24/outline";
+import { ExclamationTriangleIcon, TrashIcon } from "@heroicons/react/24/outline";
+import { PlusIcon } from "@heroicons/react/24/solid";
 
 export type CredentialsContextType = {
 	credentials: OllamaCredToggle[];
@@ -92,7 +99,7 @@ export function CredentialSection() {
 	return (
 		<div className="space-y-4">
 			<div className="flex items-center justify-between">
-				<h2 className="font-semibold text-lg text-gray-900">Credentials</h2>
+				<h2 className="font-semibold text-lg text-gray-900">Server</h2>
 				<OllamaCredentialsFormDialog />
 			</div>
 			<div className="space-y-2">
@@ -127,7 +134,7 @@ export function CredentialSection() {
 							className="text-gray-400 hover:text-red-600 flex-shrink-0"
 							onClick={() => handleRemove(index)}
 						>
-							✕
+							<TrashIcon className="w-6 h-6 text-red-500" />
 						</button>
 					</div>
 				))}
@@ -140,7 +147,7 @@ export function CredentialSection() {
 export function ControlledOllamaCredentialsFormDialog({
 	onSubmit
 }: {
-	onSubmit: (data: CredentialsFormData) => object;
+	onSubmit: (data: CredentialsFormData) => Promise<OllamaCredToggle | null>;
 }) {
 	const [dialogOpen, setDialogOpen] = useState<boolean>(false);
 
@@ -166,8 +173,11 @@ export function ControlledOllamaCredentialsFormDialog({
 	// Handles form submission
 	async function submit(data: OllamaCredToggle) {
 		const submitReturn = await onSubmit(data);
+
+		console.log(submitReturn);
+
 		if (submitReturn) {
-			addCredential(data);
+			addCredential(submitReturn);
 		}
 		setDialogOpen(false);
 	}
@@ -177,13 +187,12 @@ export function ControlledOllamaCredentialsFormDialog({
 	return (
 		<div>
 			<div>
-				<button
-					onClick={() => setDialogOpen(true)}
-					className="btn-primary"
+				<OutlinedIconButton
 					data-testid="ServerAddButton"
-				>
-					Server hinzufügen
-				</button>
+					onClick={() => setDialogOpen(true)}
+					text="Hinzufügen"
+					icon={<PlusIcon className="icon h-5" />}
+				/>
 			</div>
 			<div>
 				{dialogOpen && (
@@ -213,7 +222,7 @@ export function ControlledOllamaCredentialsFormDialog({
 										{...form.register("endpointUrl")}
 										type="text"
 										className="textfield"
-										placeholder="URL des Servers"
+										placeholder="Endpoint-URL"
 										data-testid="CredentialUrl"
 									/>
 								</LabeledField>
@@ -237,6 +246,7 @@ export function ControlledOllamaCredentialsFormDialog({
 
 export function OllamaCredentialsFormDialog() {
 	const { mutateAsync: addCredentials } = trpc.ollamaConfig.addCredentials.useMutation();
+	const { mutateAsync: getModels } = trpc.ollama.models.useMutation();
 
 	async function onSubmit(data: CredentialsFormData) {
 		const updatedData = {
@@ -262,7 +272,35 @@ export function OllamaCredentialsFormDialog() {
 					subtitle: "Der Server mit der URL ist bereits vorhanden"
 				});
 			}
-			return trpcReturn;
+
+			const fetchedModels = await getModels({
+				endpointUrl: data.endpointUrl,
+				token: data.token
+			});
+
+			if (
+				!trpcReturn ||
+				!trpcReturn.id ||
+				!trpcReturn.name ||
+				!trpcReturn.token ||
+				!trpcReturn.endpointUrl
+			) {
+				throw new Error("trpcReturn is missing required fields");
+			}
+
+			return {
+				id: trpcReturn.id,
+				name: trpcReturn.name,
+				token: trpcReturn.token,
+				endpointUrl: trpcReturn.endpointUrl,
+				available: fetchedModels?.success ?? false,
+				ollamaModels: (fetchedModels?.models ?? []).map(modelName => ({
+					id: "",
+					toggle: false,
+					name: modelName,
+					ollamaCredentialsId: trpcReturn.id
+				}))
+			} satisfies OllamaCredToggle;
 		} catch (error) {
 			showToast({
 				type: "error",
@@ -301,7 +339,7 @@ export function OllamaModelForm() {
 					}
 					firstRun = false;
 					try {
-						await addModel(model);
+						await addModel({ ...model, id: null });
 						showToast({
 							type: "success",
 							title: "Erfolg",
@@ -361,7 +399,7 @@ export function ControlledOllamaModelForm({
 		<div>
 			{/* Label for the Left Side */}
 			<div className="flex items-center justify-between pb-4">
-				<h2 className="font-semibold text-lg text-gray-900">Modelle</h2>
+				<h2 className="font-semibold text-lg text-gray-900">Verfügbare Modelle</h2>
 			</div>
 
 			<ul>
