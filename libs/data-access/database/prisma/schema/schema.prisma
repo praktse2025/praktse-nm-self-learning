@@ -11,15 +11,17 @@ datasource db {
 
 model OllamaCredentials {
     id           String         @id @default(uuid())
+    name         String
     token        String
     endpointUrl  String         @unique
-    OllamaModels OllamaModels[]
+    ollamaModels OllamaModels[]
 }
 
 model OllamaModels {
     id                  String            @id @default(uuid())
+    name                String
     ollamaCredentialsId String
-    ollamaCredentials   OllamaCredentials @relation(fields: [ollamaCredentialsId], references: [id])
+    ollamaCredentials   OllamaCredentials @relation(fields: [ollamaCredentialsId], references: [id], onDelete: Cascade)
 }
 
 model Student {

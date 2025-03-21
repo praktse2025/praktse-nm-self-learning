@@ -69,3 +69,22 @@ export function IconButton(
 		</button>
 	);
 }
+
+export function OutlinedIconButton(
+	props: DetailedHTMLProps<ButtonHTMLAttributes<HTMLButtonElement>, HTMLButtonElement> & {
+		icon: React.ReactNode;
+		text: string;
+	}
+) {
+	return (
+		<button
+			type="button"
+			className="flex place-content-center items-center gap-4 rounded-lg border border-emerald-500 bg-transparent py-2 pl-4 pr-6 font-semibold text-emerald-600 transition-colors hover:bg-emerald-50 disabled:border-opacity-25 disabled:text-opacity-25"
+			{...props}
+		>
+			{props.icon}
+			<span className="text-sm">{props.text}</span>
+		</button>
+	);
+}
+
