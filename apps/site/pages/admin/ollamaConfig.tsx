@@ -2,84 +2,52 @@ import React, {createContext, useContext, useState} from "react";
 import { database } from "@self-learning/database";
 import { GetServerSideProps } from "next";
 import {withAuth} from "../../../../libs/data-access/api/src/lib/auth/with-auth-ssr";
-import { CredentialSection, OllamaModelForm } from "@self-learning/admin";
+import {
+	CredentialsContext,
+	CredentialSection,
+	getCredentials,
+	OllamaCredToggle,
+	OllamaModelForm
+} from "@self-learning/admin";
 import {getAvailableOllamaModels} from "../../../../libs/data-access/api-client/src/lib/ollama";
-
-type CredentialsContextType = {
-	credentials: OllamaCredToggle[];
-	setCredentials: (creds: OllamaCredToggle[]) => void;
-}
-const CredentialsContext = createContext<CredentialsContextType | undefined>(undefined);
-
-export function useCredentialsContext() {
-	const context = useContext(CredentialsContext);
-	if(!context) {
-		throw new Error("useCrednetialsContext must be used within OllamaConfigPage")
-	}
-	return context
-}
-
-export type OllamaCredToggle = Awaited<ReturnType<typeof getCredentials>>[number];
-
-export async function getCredentials() {
-	const credentials = await database.ollamaCredentials.findMany({
-		select: {
-			id: true,
-			name: true,
-			token: true,
-			endpointUrl: true,
-			ollamaModels: {
-				select: {
-					id: true,
-					name: true,
-					ollamaCredentialsId: true
-				}
-			}
-		}
-	});
-
-	return credentials.map(creds => {
-		return {
-			...creds,
-			ollamaModels: creds.ollamaModels.map(model => {
-				return {
-					...model,
-					id: model.id || null,
-					toggle: true
-				};
-			})
-		};
-	});
-}
 
 export const getServerSideProps: GetServerSideProps = withAuth(async (context, user) => {
 	const credentials = await getCredentials();
 
-	for (const cred of credentials) {
-		const availableModels = await getAvailableOllamaModels(cred.endpointUrl, cred.token);
+	const updatedCredentials = await Promise.all(
+		credentials.map(async (cred) => {
+			const availableModels = await getAvailableOllamaModels(cred.endpointUrl, cred.token);
 
-		if (!availableModels) {
-			console.log("Failed to fetch models for credential:", cred.name);
-			continue;
-		}
+			if (!availableModels) {
+				cred = {
+					...cred,
+					available: false
+				}
+				return cred; // Return the original credential if fetch fails
+			}
 
-		const existingModelNames = new Set(cred.ollamaModels.map(model => model.name));
+			const existingModelNames = new Set(cred.ollamaModels.map(model => model.name));
 
-		const newModels = availableModels
-			.filter(modelName => !existingModelNames.has(modelName))
-			.map(modelName => ({
-				id: null,
-				name: modelName,
-				ollamaCredentialsId: cred.id,
-				toggle: false
-			}));
+			const newModels = availableModels
+				.filter(modelName => !existingModelNames.has(modelName))
+				.map(modelName => ({
+					id: null,
+					name: modelName,
+					ollamaCredentialsId: cred.id,
+					toggle: false
+				}));
 
-		cred.ollamaModels.push(...newModels);
-	}
+			// Return a new object instead of mutating the original one
+			return {
+				...cred,
+				ollamaModels: [...cred.ollamaModels, ...newModels]
+			};
+		})
+	);
 
 	return {
 		props: {
-			credentials
+			credentials: updatedCredentials
 		}
 	};
 });

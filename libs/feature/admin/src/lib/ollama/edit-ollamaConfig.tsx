@@ -1,12 +1,66 @@
-import React, {useState} from "react";
+import React, {createContext, useContext, useState} from "react";
 import {trpc} from "@self-learning/api-client";
 import {FormProvider, useForm} from "react-hook-form";
 import {zodResolver} from "@hookform/resolvers/zod";
 import * as z from "zod";
 import {Dialog, GreyBoarderButton, showToast, Toggle} from "@self-learning/ui/common";
 import {OllamaCredentialsFormSchema, OllamaModelsSchema} from "@self-learning/types";
-import {OllamaCredToggle, useCredentialsContext} from "../../../../../../apps/site/pages/admin/ollamaConfig";
 import {LabeledField} from "@self-learning/ui/forms";
+import {database} from "@self-learning/database";
+
+export type CredentialsContextType = {
+	credentials: OllamaCredToggle[];
+	setCredentials: (creds: OllamaCredToggle[]) => void;
+}
+
+// Context for storing and managing Ollama credentials
+export const CredentialsContext = createContext<CredentialsContextType | undefined>(undefined);
+
+// Custom hook to use the credentials context safely
+export function useCredentialsContext() {
+	const context = useContext(CredentialsContext);
+	if (!context) {
+		// Enforce usage within the appropriate provider
+		throw new Error("useCrednetialsContext must be used within OllamaConfigPage")
+	}
+	return context
+}
+
+export type OllamaCredToggle = Awaited<ReturnType<typeof getCredentials>>[number];
+
+// Fetches stored credentials from the database and returns them in a structured format.
+export async function getCredentials() {
+	const credentials = await database.ollamaCredentials.findMany({
+		select: {
+			id: true,
+			name: true,
+			token: true,
+			endpointUrl: true,
+			ollamaModels: {
+				select: {
+					id: true,
+					name: true,
+					ollamaCredentialsId: true
+				}
+			}
+		}
+	});
+
+	// Map over credentials and add a toggle field to models
+	return credentials.map(creds => {
+		return {
+			...creds,
+			available: true,
+			ollamaModels: creds.ollamaModels.map(model => {
+				return {
+					...model,
+					id: model.id || null,
+					toggle: true
+				};
+			})
+		};
+	});
+}
 
 type CredentialsFormData = {
 	id: string;
@@ -15,16 +69,19 @@ type CredentialsFormData = {
 	endpointUrl: string;
 };
 
+// Displays a list of stored credentials and allows removal of credentials
 export function CredentialSection() {
 	const {mutateAsync: removeCredentialFromDB} =
 		trpc.ollamaConfig.removeCredentials.useMutation();
 
 	const {credentials, setCredentials} = useCredentialsContext();
 
+	// Removes a credential from the UI state
 	function removeCredential(data: CredentialsFormData) {
 		setCredentials(credentials.filter(cred => cred.name !== data.name)); // Remove by name
 	}
 
+	// Handles the removal process, updating both UI and DB
 	function handleRemove(index: number) {
 		const credToRemove = credentials[index];
 		removeCredential(credToRemove);
@@ -37,7 +94,6 @@ export function CredentialSection() {
 				<h2 className="font-semibold text-lg text-gray-900">Credentials</h2>
 				<OllamaCredentialsFormDialog/>
 			</div>
-
 			<div className="space-y-2">
 				{credentials.map((credential, index) => (
 					<div
@@ -52,7 +108,9 @@ export function CredentialSection() {
 							</div>
 							<div>
 								<p className="font-medium text-gray-900">{credential.name}</p>
-								<p className="text-sm text-gray-500">{credential.endpointUrl}</p>
+								{credential.available ?
+									<p className="text-sm text-gray-500">{credential.endpointUrl}</p> :
+									<p className="text-sm text-red-500">{credential.endpointUrl + "(nicht erreichbar)"}</p>}
 							</div>
 						</div>
 
@@ -69,6 +127,7 @@ export function CredentialSection() {
 	);
 }
 
+// Modal form for adding a new Ollama credential
 export function ControlledOllamaCredentialsFormDialog({
 														  onSubmit,
 													  }: {
@@ -78,6 +137,7 @@ export function ControlledOllamaCredentialsFormDialog({
 
 	const {credentials, setCredentials} = useCredentialsContext();
 
+	// Adds a new credential to the UI state
 	function addCredential(data: OllamaCredToggle) {
 		setCredentials([...credentials, data]); // Add new credential
 	}
@@ -89,10 +149,12 @@ export function ControlledOllamaCredentialsFormDialog({
 			name: "",
 			token: "",
 			endpointUrl: "",
+			available: true,
 			ollamaModels: []
 		}
 	});
 
+	// Handles form submission
 	async function submit(data: OllamaCredToggle) {
 		const submitReturn = await onSubmit(data);
 		if (submitReturn) {
@@ -106,7 +168,7 @@ export function ControlledOllamaCredentialsFormDialog({
 	return (
 		<div>
 			<div>
-				<button onClick={() => setDialogOpen(true)} className="btn-primary">
+				<button onClick={() => setDialogOpen(true)} className="btn-primary" data-testid="ServerAddButton">
 					Server hinzufügen
 				</button>
 			</div>
@@ -207,10 +269,11 @@ export function OllamaCredentialsFormDialog() {
 	);
 }
 
+// Form to manage Ollama models with toggle functionality
 export function OllamaModelForm() {
-	const {credentials, setCredentials} = useCredentialsContext();
 	const {mutateAsync: addModel} = trpc.ollamaConfig.addModel.useMutation();
 
+	// Handles model activation, ensuring only one model is active at a time
 	async function onSubmit(credentials: OllamaCredToggle[]) {
 		let firstRun = true;
 
