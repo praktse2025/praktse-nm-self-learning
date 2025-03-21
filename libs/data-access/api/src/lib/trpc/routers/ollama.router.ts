@@ -16,7 +16,7 @@ export const ollamaRouter = t.router({
 			}
 
 			try {
-				const response = await chatWithLLM(input.message);
+				const response = await chatWithLLM(input.message, "");
 
 				if (!response) {
 					console.error("[ollamaRouter.chat] Failed to get response from Ollama.");
