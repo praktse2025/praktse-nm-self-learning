@@ -3,8 +3,7 @@ import { GetServerSideProps } from "next";
 import { withAuth } from "@self-learning/api";
 import {
 	CredentialsContext,
-	CredentialSection,
-	getCredentials,
+	getCredentials, OllamaCredentialsFormDialog,
 	OllamaCredToggle,
 	OllamaModelForm
 } from "@self-learning/admin";
@@ -54,24 +53,19 @@ export const getServerSideProps: GetServerSideProps = withAuth(async (context, u
 	};
 });
 
-export default function OllamaConfigPage({ credentials }: { credentials: OllamaCredToggle[] }) {
+export default function AiConfigPage({credentials}: { credentials: OllamaCredToggle[] }) {
 	const [credentialsState, setCredentialsState] = useState<OllamaCredToggle[]>(credentials);
 	return (
 		<CredentialsContext.Provider
 			value={{ credentials: credentialsState, setCredentials: setCredentialsState }}
 		>
 			<div className="bg-gray-50 flex items-center justify-center h-screen">
-				<div className="grid grid-cols-3 gap-4 w-10/12 max-w-screen-md items-center">
-					<div className="col-span-2 flex justify-center">
-						<div className="w-11/12">
-							<CredentialSection />
-						</div>
-					</div>
-
-					{/* Right Side - Model Selection, Centered */}
-					<div className="flex justify-center">
-						<OllamaModelForm />
-					</div>
+				<div>
+					<span>Server</span>
+					<OllamaCredentialsFormDialog/>
+				</div>
+				<div className="flex justify-center">
+					<OllamaModelForm/>
 				</div>
 			</div>
 		</CredentialsContext.Provider>
