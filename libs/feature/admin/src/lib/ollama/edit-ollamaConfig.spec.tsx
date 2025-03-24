@@ -1,12 +1,18 @@
 // edit-ollamaConfig.spec.tsx
-import {fireEvent, render, screen, waitFor} from "@testing-library/react";
+import {fireEvent, render, renderHook, screen, waitFor} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {
 	ControlledOllamaCredentialsFormDialog,
-	ControlledOllamaModelForm, CredentialsContext, OllamaCredToggle
+	ControlledOllamaModelForm,
+	CredentialsContext,
+	CredentialsContextType,
+	getCredentials,
+	OllamaCredToggle,
+	useCredentialsContext
 } from "./edit-ollamaConfig";
 import {TextEncoder, TextDecoder} from 'util';
-import {useState} from "react";
+import {ReactNode, useState} from "react";
+import {database} from "@self-learning/database";
 
 Object.assign(global, {TextDecoder, TextEncoder});
 
@@ -35,6 +41,14 @@ jest.mock("@self-learning/api-client", () => ({
 			}
 		}
 	}
+}));
+
+jest.mock("@self-learning/database", () => ({
+	database: {
+		ollamaCredentials: {
+			findMany: jest.fn(),
+		},
+	},
 }));
 
 function TestWrapper({testCredentials, children}: { testCredentials: OllamaCredToggle[], children: any }) {
@@ -275,4 +289,76 @@ describe("ai-configuration Components", () => {
 			});
 		});
 	});
-})
+
+	describe("useCredentialsContext", () => {
+		let consoleErrorSpy: jest.SpyInstance;
+
+		beforeEach(() => {
+			consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {
+			});
+		});
+
+		afterEach(() => {
+			consoleErrorSpy.mockRestore();
+		});
+
+		it("throws an error when used outside the CredentialsContext provider", () => {
+			expect(() => renderHook(() => useCredentialsContext())).toThrowError(
+				"useCrednetialsContext must be used within OllamaConfigPage"
+			);
+		});
+
+		it("returns the correct context value when inside the provider", () => {
+			const mockContextValue: CredentialsContextType = {
+				credentials: [],
+				setCredentials: jest.fn(),
+			};
+
+			const wrapper = ({children}: { children: React.ReactNode }) => (
+				<CredentialsContext.Provider value={mockContextValue}>{children}</CredentialsContext.Provider>
+			);
+
+			const {result} = renderHook(() => useCredentialsContext(), {wrapper});
+
+			expect(result.current).toEqual(mockContextValue);
+		});
+	});
+
+
+	describe("getCredentials", () => {
+		it("fetches credentials and transforms them correctly", async () => {
+			const mockData = [
+				{
+					id: "1",
+					name: "Test Credential",
+					token: "test123",
+					endpointUrl: "https://example.com",
+					ollamaModels: [
+						{id: "101", name: "Model A", ollamaCredentialsId: "1"},
+						{id: "102", name: "Model B", ollamaCredentialsId: "1"},
+					],
+				},
+			];
+
+			database.ollamaCredentials.findMany.mockResolvedValue(mockData);
+
+			const result = await getCredentials();
+
+			expect(result).toEqual([
+				{
+					id: "1",
+					name: "Test Credential",
+					token: "test123",
+					endpointUrl: "https://example.com",
+					available: true,
+					ollamaModels: [
+						{id: "101", name: "Model A", ollamaCredentialsId: "1", toggle: true},
+						{id: "102", name: "Model B", ollamaCredentialsId: "1", toggle: true},
+					],
+				},
+			]);
+
+			expect(database.ollamaCredentials.findMany).toHaveBeenCalledTimes(1);
+		});
+	});
+});

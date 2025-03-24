@@ -87,11 +87,6 @@ export function ControlledOllamaCredentialsFormDialog({
 
 	const { credentials, setCredentials } = useCredentialsContext();
 
-	// Adds a new credential to the UI state
-	function addCredential(data: OllamaCredToggle) {
-		setCredentials([...credentials, data]); // Add new credential
-	}
-
 	const form = useForm({
 		resolver: zodResolver(OllamaCredentialsFormSchema),
 		defaultValues: {
@@ -111,7 +106,7 @@ export function ControlledOllamaCredentialsFormDialog({
 		console.log(submitReturn);
 
 		if (submitReturn) {
-			addCredential(submitReturn);
+			setCredentials([...credentials, data]);
 		}
 		setDialogOpen(false);
 	}
