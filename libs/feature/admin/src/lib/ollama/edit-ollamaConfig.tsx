@@ -364,6 +364,7 @@ export function ControlledOllamaModelForm({
 									onClick={() => handleRemove(credsIndex)}
 									className="absolute top-3 right-3 hover:text-red-600 text-red-400"
 									aria-label="Server löschen"
+									data-testid={`CredentialsRemoveButton+${cred.id}`}
 								>
 									<TrashIcon className="h-7 w-7" />
 								</button>

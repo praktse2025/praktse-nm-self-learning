@@ -1,12 +1,12 @@
-import { authProcedure, t } from "../trpc";
-import { database } from "@self-learning/database";
-import { OllamaCredentialsSchema, OllamaModelsSchema } from "@self-learning/types";
+import {authProcedure, t} from "../trpc";
+import {database} from "@self-learning/database";
+import {OllamaCredentialsSchema, OllamaModelsSchema} from "@self-learning/types";
 import {z} from "zod";
 
 export const ollamaConfigRouter = t.router({
 	addCredentials: authProcedure
 		.input(OllamaCredentialsSchema)
-		.mutation(async ({ input, ctx }) => {
+		.mutation(async ({input, ctx}) => {
 			if (ctx.user?.role !== "ADMIN") {
 				console.log("Unauthorized access attempt to add credentials.");
 				return null;
@@ -20,11 +20,11 @@ export const ollamaConfigRouter = t.router({
 						endpointUrl: input.endpointUrl,
 						ollamaModels: input.ollamaModels
 							? {
-									create: input.ollamaModels.map(model => ({
-										name: model.name,
-										ollamaCredentialsId: input.id
-									}))
-								}
+								create: input.ollamaModels.map(model => ({
+									name: model.name,
+									ollamaCredentialsId: input.id
+								}))
+							}
 							: undefined
 					}
 				});
@@ -33,7 +33,7 @@ export const ollamaConfigRouter = t.router({
 				return null;
 			}
 		}),
-	addModel: authProcedure.input(OllamaModelsSchema).mutation(async ({ input, ctx }) => {
+	addModel: authProcedure.input(OllamaModelsSchema).mutation(async ({input, ctx}) => {
 		if (ctx.user?.role !== "ADMIN") {
 			console.log("Unauthorized access attempt to add a model.");
 			return null;
@@ -53,10 +53,9 @@ export const ollamaConfigRouter = t.router({
 			return null;
 		}
 	}),
-
 	removeCredentials: authProcedure
 		.input(z.object({id: z.string()}))
-		.mutation(async ({ input, ctx }) => {
+		.mutation(async ({input, ctx}) => {
 			if (ctx.user?.role !== "ADMIN") {
 				console.log("Unauthorized access attempt to remove credentials.");
 				return null;
@@ -65,7 +64,7 @@ export const ollamaConfigRouter = t.router({
 
 			try {
 				return await database.ollamaCredentials.delete({
-					where: { id: input.id }
+					where: {id: input.id}
 				});
 			} catch (error) {
 				console.error("Error removing Ollama credentials:", error);

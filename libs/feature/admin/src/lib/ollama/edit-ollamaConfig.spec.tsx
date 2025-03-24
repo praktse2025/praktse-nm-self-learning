@@ -6,14 +6,14 @@ import {
 	ControlledOllamaModelForm, CredentialsContext, OllamaCredToggle
 } from "./edit-ollamaConfig";
 import {TextEncoder, TextDecoder} from 'util';
-import type {GetServerSidePropsContext} from "next";
-import {createContext, useContext, useState} from "react";
+import {useState} from "react";
 
 Object.assign(global, {TextDecoder, TextEncoder});
 
 // Create a mocked mutation function
 const addModelMock = jest.fn();
 const addCredentialMock = jest.fn();
+const removeCredentialMock = jest.fn();
 
 jest.mock("@self-learning/api-client", () => ({
 	trpc: {
@@ -26,6 +26,11 @@ jest.mock("@self-learning/api-client", () => ({
 			addCredentials: {
 				useMutation: () => ({
 					mutateAsync: addCredentialMock
+				})
+			},
+			removeCredentials: {
+				useMutation: () => ({
+					mutateAsync: removeCredentialMock
 				})
 			}
 		}
@@ -41,161 +46,233 @@ function TestWrapper({testCredentials, children}: { testCredentials: OllamaCredT
 	);
 }
 
-
-describe("OllamaCredentialsForm", () => {
-	beforeEach(() => {
-		addCredentialMock.mockClear();
-	});
-	// Arrange
-	it("should call addCredentials when add button ist clicked", async () => {
-		const dummyCredentials: OllamaCredToggle[] = [{
-			id: "",
-			name: "TestModel1",
-			token: "234234334",
-			endpointUrl: "http://test.de",
-			ollamaModels: [{
+describe("ai-configuration Components", () => {
+	describe("OllamaCredentialsForm", () => {
+		beforeEach(() => {
+			addCredentialMock.mockClear();
+		});
+		// Arrange
+		it("should call addCredentials when add button ist clicked", async () => {
+			const dummyCredentials: OllamaCredToggle[] = [{
 				id: "",
-				name: "",
-				toggle: false,
-				ollamaCredentialsId: ""
+				name: "TestModel1",
+				token: "234234334",
+				endpointUrl: "http://test.de",
+				available: true,
+				ollamaModels: [{
+					id: "",
+					name: "",
+					toggle: false,
+					ollamaCredentialsId: ""
+				}]
 			}]
-		}]
-		const expectedCredentials = {
-			name: "TestModel1",
-			token: "234234334",
-			endpointUrl: "http://test.de"
-		}
+			const expectedCredentials = {
+				name: "TestModel1",
+				token: "234234334",
+				endpointUrl: "http://test.de"
+			}
 
-		// Act
-		render(
-			<TestWrapper testCredentials={dummyCredentials}>
-				<ControlledOllamaCredentialsFormDialog onSubmit={addCredentialMock}/>
-			</TestWrapper>
-		);
+			// Act
+			render(
+				<TestWrapper testCredentials={dummyCredentials}>
+					<ControlledOllamaCredentialsFormDialog onSubmit={addCredentialMock}/>
+				</TestWrapper>
+			);
 
-		const serverAddButton = screen.getByTestId("ServerAddButton")
+			const serverAddButton = screen.getByTestId("ServerAddButton")
 
-		await userEvent.click(serverAddButton);
+			await userEvent.click(serverAddButton);
 
-		const form = screen.getByTestId("OllamaCredentialsForm");
+			const form = screen.getByTestId("OllamaCredentialsForm");
 
-		const credentialNameInput = screen.getByTestId("CredentialName")
-		const credentialTokenInput = screen.getByTestId("CredentialToken")
-		const credentialEndpointUrlInput = screen.getByTestId("CredentialUrl")
+			const credentialNameInput = screen.getByTestId("CredentialName")
+			const credentialTokenInput = screen.getByTestId("CredentialToken")
+			const credentialEndpointUrlInput = screen.getByTestId("CredentialUrl")
 
-		await userEvent.type(credentialNameInput, dummyCredentials[0].name)
-		await userEvent.type(credentialTokenInput, dummyCredentials[0].token)
-		await userEvent.type(credentialEndpointUrlInput, dummyCredentials[0].endpointUrl)
+			await userEvent.type(credentialNameInput, dummyCredentials[0].name)
+			await userEvent.type(credentialTokenInput, dummyCredentials[0].token)
+			await userEvent.type(credentialEndpointUrlInput, dummyCredentials[0].endpointUrl)
 
-		fireEvent.submit(form);
+			fireEvent.submit(form);
 
-		// Assert
-		await waitFor(() => {
-			expect(addCredentialMock).toHaveBeenCalledTimes(1)
-			expect(addCredentialMock).toHaveBeenCalledWith(expectedCredentials)
+			// Assert
+			await waitFor(() => {
+				expect(addCredentialMock).toHaveBeenCalledTimes(1)
+				expect(addCredentialMock).toHaveBeenCalledWith(expectedCredentials)
+			});
+
+
 		});
 
+	})
 
+
+	describe("OllamaModelForm", () => {
+		beforeEach(() => {
+			addModelMock.mockClear();
+		});
+
+		it("Should call addModel with model B after toggling", async () => {
+			// Arrange
+			const dummyCredentials = [
+				{
+					id: "cred1",
+					name: "Klaus",
+					endpointUrl: "",
+					token: "",
+					available: true,
+					ollamaModels: [
+						{
+							id: "modelA",
+							name: "Model A",
+							ollamaCredentialsId: "cred1",
+							toggle: true
+						},
+						{
+							id: "modelB",
+							name: "Model B",
+							ollamaCredentialsId: "cred1",
+							toggle: false
+						}
+					]
+				}
+			];
+
+			// Act
+			render(
+				<TestWrapper testCredentials={dummyCredentials}>
+					<ControlledOllamaModelForm onSubmit={addModelMock}/>
+				</TestWrapper>
+			);
+
+			const form = screen.getByTestId("OllamaModelForm");
+
+			const checkboxes = screen.getAllByRole("checkbox");
+			const modelInputA = checkboxes[0];
+			const modelInputB = checkboxes[1];
+
+			await userEvent.click(modelInputB);
+			await userEvent.click(modelInputA);
+
+			fireEvent.submit(form);
+
+			// Assert
+			await waitFor(() => {
+				expect(addModelMock).toHaveBeenCalledTimes(1)
+				expect(addModelMock).toHaveBeenCalledWith(dummyCredentials)
+			});
+		});
+
+		it("should call addModel only once even if two models are toggled true in the same credentials", async () => {
+			// Arrange
+			const dummyCredentials = [
+				{
+					id: "cred1",
+					name: "Klaus",
+					endpointUrl: "http://test.com",
+					token: "",
+					available: true,
+					ollamaModels: [
+						{
+							id: "modelA",
+							name: "Model A",
+							ollamaCredentialsId: "cred1",
+							toggle: true
+						},
+						{
+							id: "modelB",
+							name: "Model B",
+							ollamaCredentialsId: "cred1",
+							toggle: true
+						}
+					]
+				}
+			];
+
+			// Act
+			render(
+				<TestWrapper testCredentials={dummyCredentials}>
+					<ControlledOllamaModelForm onSubmit={addModelMock}/>
+				</TestWrapper>
+			);
+
+			const form = screen.getByTestId("OllamaModelForm");
+
+			fireEvent.submit(form);
+
+			// Assert
+			await waitFor(() => {
+				expect(addModelMock).toHaveBeenCalledTimes(1)
+				expect(addModelMock).toHaveBeenCalledWith(dummyCredentials)
+			});
+		});
+
+		it("Should removeCredentials with id: cred2", async () => {
+			// Arrange
+			const dummyCredentials = [
+				{
+					id: "cred1",
+					name: "Klaus",
+					endpointUrl: "",
+					token: "",
+					available: true,
+					ollamaModels: [
+						{
+							id: "modelA",
+							name: "Model A",
+							ollamaCredentialsId: "cred1",
+							toggle: true
+						},
+						{
+							id: "modelB",
+							name: "Model B",
+							ollamaCredentialsId: "cred1",
+							toggle: false
+						}
+					]
+				},
+				{
+					id: "cred2",
+					name: "Rami",
+					endpointUrl: "https://chatgpt.com",
+					token: "sdfsadf",
+					available: true,
+					ollamaModels: [
+						{
+							id: "modelA",
+							name: "Model A",
+							ollamaCredentialsId: "cred1",
+							toggle: true
+						},
+						{
+							id: "modelB",
+							name: "Model B",
+							ollamaCredentialsId: "cred1",
+							toggle: false
+						}
+					]
+				}
+			];
+
+			// Act
+			render(
+				<TestWrapper testCredentials={dummyCredentials}>
+					<ControlledOllamaModelForm onSubmit={addModelMock}/>
+				</TestWrapper>
+			);
+
+			const form = screen.getByTestId("OllamaModelForm");
+
+			const credentialsRemoveButtonB = screen.getByTestId(`CredentialsRemoveButton+${dummyCredentials[1].id}`)
+
+			const checkboxes = screen.getAllByRole("checkbox");
+			await userEvent.click(credentialsRemoveButtonB);
+
+			// Assert
+			await waitFor(() => {
+				expect(removeCredentialMock).toHaveBeenCalledTimes(1)
+				expect(removeCredentialMock).toHaveBeenCalledWith({id: dummyCredentials[1].id})
+			});
+		});
 	});
-
 })
-
-
-describe("OllamaModelForm", () => {
-	beforeEach(() => {
-		addModelMock.mockClear();
-	});
-
-	it("Should call addModel with model B after toggling", async () => {
-		// Arrange
-		const dummyCredentials = [
-			{
-				id: "cred1",
-				name: "Klaus",
-				endpointUrl: "",
-				token: "",
-				ollamaModels: [
-					{
-						id: "modelA",
-						name: "Model A",
-						ollamaCredentialsId: "cred1",
-						toggle: true
-					},
-					{
-						id: "modelB",
-						name: "Model B",
-						ollamaCredentialsId: "cred1",
-						toggle: false
-					}
-				]
-			}
-		];
-
-		// Act
-		render(
-			<TestWrapper testCredentials={dummyCredentials}>
-				<ControlledOllamaModelForm onSubmit={addModelMock}/>
-			</TestWrapper>
-		);
-
-		const form = screen.getByTestId("OllamaModelForm");
-
-		const checkboxes = screen.getAllByRole("checkbox");
-		const modelInputA = checkboxes[0];
-		const modelInputB = checkboxes[1];
-
-		await userEvent.click(modelInputB);
-		await userEvent.click(modelInputA);
-
-		fireEvent.submit(form);
-
-		// Assert
-		await waitFor(() => {
-			expect(addModelMock).toHaveBeenCalledTimes(1)
-			expect(addModelMock).toHaveBeenCalledWith(dummyCredentials)
-		});
-	});
-
-	it("should call addModel only once even if two models are toggled true in the same credentials", async () => {
-		// Arrange
-		const dummyCredentials = [
-			{
-				id: "cred1",
-				name: "Klaus",
-				endpointUrl: "http://test.com",
-				token: "",
-				ollamaModels: [
-					{
-						id: "modelA",
-						name: "Model A",
-						ollamaCredentialsId: "cred1",
-						toggle: true
-					},
-					{
-						id: "modelB",
-						name: "Model B",
-						ollamaCredentialsId: "cred1",
-						toggle: true
-					}
-				]
-			}
-		];
-
-		// Act
-		render(
-			<TestWrapper testCredentials={dummyCredentials}>
-				<ControlledOllamaModelForm onSubmit={addModelMock}/>
-			</TestWrapper>
-		);
-
-		const form = screen.getByTestId("OllamaModelForm");
-
-		fireEvent.submit(form);
-
-		// Assert
-		await waitFor(() => {
-			expect(addModelMock).toHaveBeenCalledTimes(1)
-			expect(addModelMock).toHaveBeenCalledWith(dummyCredentials)
-		});
-	});
-});
