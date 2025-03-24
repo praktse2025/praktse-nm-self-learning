@@ -53,7 +53,7 @@ export default function AdminPage() {
 				/>
 
 				<Card
-					href="/admin/ollamaConfig"
+					href="/admin/ai-config"
 					imageElement={<TutorialSvg />}
 					title="AI-Konfiguration"
 				/>
