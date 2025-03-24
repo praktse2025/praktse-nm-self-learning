@@ -1,5 +1,5 @@
 // edit-ollamaConfig.spec.tsx
-import {fireEvent, render, renderHook, screen, waitFor} from "@testing-library/react";
+import { fireEvent, render, renderHook, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {
 	ControlledOllamaCredentialsFormDialog,
@@ -7,19 +7,22 @@ import {
 	CredentialsContext,
 	CredentialsContextType,
 	getCredentials,
+	OllamaCredentialsFormDialog,
 	OllamaCredToggle,
 	useCredentialsContext
 } from "./edit-ollamaConfig";
-import {TextEncoder, TextDecoder} from 'util';
-import {ReactNode, useState} from "react";
-import {database} from "@self-learning/database";
+import { TextDecoder, TextEncoder } from "util";
+import { useState } from "react";
+import { database } from "@self-learning/database";
 
-Object.assign(global, {TextDecoder, TextEncoder});
+Object.assign(global, { TextDecoder, TextEncoder });
 
 // Create a mocked mutation function
 const addModelMock = jest.fn();
 const addCredentialMock = jest.fn();
 const removeCredentialMock = jest.fn();
+
+const getModelsMock = jest.fn();
 
 jest.mock("@self-learning/api-client", () => ({
 	trpc: {
@@ -37,6 +40,13 @@ jest.mock("@self-learning/api-client", () => ({
 			removeCredentials: {
 				useMutation: () => ({
 					mutateAsync: removeCredentialMock
+				})
+			}
+		},
+		ollama: {
+			models: {
+				useMutation: () => ({
+					mutateAsync: getModelsMock
 				})
 			}
 		}
@@ -65,60 +75,266 @@ describe("ai-configuration Components", () => {
 		beforeEach(() => {
 			addCredentialMock.mockClear();
 		});
-		// Arrange
-		it("should call addCredentials when add button ist clicked", async () => {
-			const dummyCredentials: OllamaCredToggle[] = [{
-				id: "",
-				name: "TestModel1",
-				token: "234234334",
-				endpointUrl: "http://test.de",
+
+		it("calls setCredentials when a new credential is submitted", async () => {
+			const mockSetCredentials = jest.fn();
+
+			const mockCred: OllamaCredToggle = {
+				id: "123",
+				name: "Test Server",
+				token: "abc123",
+				endpointUrl: "http://localhost:11434",
 				available: true,
-				ollamaModels: [{
+				ollamaModels: [
+					{
+						id: "",
+						name: "llama2",
+						toggle: true,
+						ollamaCredentialsId: "123"
+					}
+				]
+			};
+
+			const fakeOnSubmit = jest.fn().mockResolvedValue(mockCred);
+
+			render(
+				<CredentialsContext.Provider
+					value={{ credentials: [], setCredentials: mockSetCredentials }}
+				>
+					<ControlledOllamaCredentialsFormDialog onSubmit={fakeOnSubmit} />
+				</CredentialsContext.Provider>
+			);
+
+			await userEvent.click(screen.getByTestId("ServerAddButton"));
+
+			await userEvent.type(screen.getByTestId("CredentialName"), mockCred.name);
+			await userEvent.type(screen.getByTestId("CredentialToken"), mockCred.token);
+			await userEvent.type(screen.getByTestId("CredentialUrl"), mockCred.endpointUrl);
+
+			fireEvent.submit(screen.getByTestId("OllamaCredentialsForm"));
+
+			await waitFor(() => {
+				expect(fakeOnSubmit).toHaveBeenCalledTimes(1);
+				expect(mockSetCredentials).toHaveBeenCalledTimes(1);
+
+				expect(mockSetCredentials).toHaveBeenCalledWith(
+					expect.arrayContaining([
+						{
+							endpointUrl: "http://localhost:11434",
+							name: "Test Server",
+							token: "abc123"
+						}
+					])
+				);
+			});
+		});
+
+		it("should call addCredentials when add button ist clicked", async () => {
+			const dummyCredentials: OllamaCredToggle[] = [
+				{
 					id: "",
-					name: "",
-					toggle: false,
-					ollamaCredentialsId: ""
-				}]
-			}]
+					name: "TestModel1",
+					token: "234234334",
+					endpointUrl: "http://test.de",
+					available: true,
+					ollamaModels: [
+						{
+							id: "",
+							name: "",
+							toggle: false,
+							ollamaCredentialsId: ""
+						}
+					]
+				}
+			];
 			const expectedCredentials = {
 				name: "TestModel1",
 				token: "234234334",
 				endpointUrl: "http://test.de"
-			}
+			};
 
 			// Act
 			render(
 				<TestWrapper testCredentials={dummyCredentials}>
-					<ControlledOllamaCredentialsFormDialog onSubmit={addCredentialMock}/>
+					<ControlledOllamaCredentialsFormDialog onSubmit={addCredentialMock} />
 				</TestWrapper>
 			);
 
-			const serverAddButton = screen.getByTestId("ServerAddButton")
+			const serverAddButton = screen.getByTestId("ServerAddButton");
 
+			await userEvent.click(serverAddButton);
+			await userEvent.click(serverAddButton);
 			await userEvent.click(serverAddButton);
 
 			const form = screen.getByTestId("OllamaCredentialsForm");
 
-			const credentialNameInput = screen.getByTestId("CredentialName")
-			const credentialTokenInput = screen.getByTestId("CredentialToken")
-			const credentialEndpointUrlInput = screen.getByTestId("CredentialUrl")
+			const credentialNameInput = screen.getByTestId("CredentialName");
+			const credentialTokenInput = screen.getByTestId("CredentialToken");
+			const credentialEndpointUrlInput = screen.getByTestId("CredentialUrl");
 
-			await userEvent.type(credentialNameInput, dummyCredentials[0].name)
-			await userEvent.type(credentialTokenInput, dummyCredentials[0].token)
-			await userEvent.type(credentialEndpointUrlInput, dummyCredentials[0].endpointUrl)
+			await userEvent.type(credentialNameInput, dummyCredentials[0].name);
+			await userEvent.type(credentialTokenInput, dummyCredentials[0].token);
+			await userEvent.type(credentialEndpointUrlInput, dummyCredentials[0].endpointUrl);
 
 			fireEvent.submit(form);
 
 			// Assert
 			await waitFor(() => {
-				expect(addCredentialMock).toHaveBeenCalledTimes(1)
-				expect(addCredentialMock).toHaveBeenCalledWith(expectedCredentials)
+				expect(addCredentialMock).toHaveBeenCalledTimes(1);
+				expect(addCredentialMock).toHaveBeenCalledWith(expectedCredentials);
 			});
-
-
 		});
 
-	})
+		it("should call crete error toast if url is added again", async () => {
+			const dummyCredentials: OllamaCredToggle[] = [
+				{
+					id: "",
+					name: "TestModel1",
+					token: "234234334",
+					endpointUrl: "http://test.de",
+					available: true,
+					ollamaModels: [
+						{
+							id: "",
+							name: "",
+							toggle: false,
+							ollamaCredentialsId: ""
+						}
+					]
+				}
+			];
+
+			// Act
+			render(
+				<TestWrapper testCredentials={dummyCredentials}>
+					<ControlledOllamaCredentialsFormDialog onSubmit={addCredentialMock} />
+				</TestWrapper>
+			);
+
+			const serverAddButton = screen.getByTestId("ServerAddButton");
+
+			await userEvent.click(serverAddButton);
+
+			const form = screen.getByTestId("OllamaCredentialsForm");
+
+			const credentialNameInput = screen.getByTestId("CredentialName");
+			const credentialTokenInput = screen.getByTestId("CredentialToken");
+			const credentialEndpointUrlInput = screen.getByTestId("CredentialUrl");
+
+			await userEvent.type(credentialNameInput, dummyCredentials[0].name);
+			await userEvent.type(credentialTokenInput, dummyCredentials[0].token);
+			await userEvent.type(credentialEndpointUrlInput, dummyCredentials[0].endpointUrl);
+
+			fireEvent.submit(form);
+
+			const serverAddButton2 = screen.getByTestId("ServerAddButton");
+
+			await userEvent.click(serverAddButton2);
+
+			const form2 = screen.getByTestId("OllamaCredentialsForm");
+
+			const credentialNameInput2 = screen.getByTestId("CredentialName");
+			const credentialTokenInput2 = screen.getByTestId("CredentialToken");
+			const credentialEndpointUrlInput2 = screen.getByTestId("CredentialUrl");
+
+			await userEvent.type(credentialNameInput2, dummyCredentials[0].name);
+			await userEvent.type(credentialTokenInput2, dummyCredentials[0].token);
+			await userEvent.type(credentialEndpointUrlInput2, dummyCredentials[0].endpointUrl);
+
+			fireEvent.submit(form2);
+
+			// Assert
+			await waitFor(() => {
+				expect(addCredentialMock).toHaveBeenCalledTimes(2);
+
+			});
+		});
+
+		it("should close addCredentials when abbrecehn button ist clicked", async () => {
+			const dummyCredentials: OllamaCredToggle[] = [
+				{
+					id: "",
+					name: "TestModel1",
+					token: "234234334",
+					endpointUrl: "http://test.de",
+					available: true,
+					ollamaModels: [
+						{
+							id: "",
+							name: "",
+							toggle: false,
+							ollamaCredentialsId: ""
+						}
+					]
+				}
+			];
+
+			// Act
+			render(
+				<TestWrapper testCredentials={dummyCredentials}>
+					<ControlledOllamaCredentialsFormDialog onSubmit={addCredentialMock} />
+				</TestWrapper>
+			);
+
+			const serverAddButton = screen.getByTestId("ServerAddButton");
+
+			await userEvent.click(serverAddButton);
+
+			const abbrechenButton = screen.getByTestId("AbbrechenButton");
+
+			await userEvent.click(abbrechenButton);
+
+			// Assert
+			await waitFor(() => {
+				expect(addCredentialMock).toHaveBeenCalledTimes(0);
+				expect(screen.queryByTestId("addServerDialog")).toBeNull();
+			});
+		});
+	});
+
+	describe("CredentialsFormDialog", () => {
+		beforeEach(() => {
+			addCredentialMock.mockClear();
+		});
+
+		it("submits form via OllamaCredentialsFormDialog and triggers all async logic (addCredentials + getModels)", async () => {
+			const mockSetCredentials = jest.fn();
+
+			addCredentialMock.mockResolvedValue({
+				id: "cred-test",
+				name: "New Server",
+				token: "token123",
+				endpointUrl: "http://localhost:1234"
+			});
+
+			getModelsMock.mockResolvedValue({
+				success: true,
+				models: ["llama2", "mistral"]
+			});
+
+			render(
+				<CredentialsContext.Provider
+					value={{ credentials: [], setCredentials: mockSetCredentials }}
+				>
+					<OllamaCredentialsFormDialog />
+				</CredentialsContext.Provider>
+			);
+
+			await userEvent.click(screen.getByTestId("ServerAddButton"));
+
+			await userEvent.type(screen.getByTestId("CredentialName"), "New Server");
+			await userEvent.type(screen.getByTestId("CredentialToken"), "token123");
+			await userEvent.type(screen.getByTestId("CredentialUrl"), "http://localhost:1234");
+
+			fireEvent.submit(screen.getByTestId("OllamaCredentialsForm"));
+
+			await waitFor(() => {
+				expect(addCredentialMock).toHaveBeenCalledTimes(1);
+				expect(getModelsMock).toHaveBeenCalledTimes(1);
+				expect(mockSetCredentials).toHaveBeenCalledTimes(1);
+			});
+		});
+	});
 
 
 	describe("OllamaModelForm", () => {

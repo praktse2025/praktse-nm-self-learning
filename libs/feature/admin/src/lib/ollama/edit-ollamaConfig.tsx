@@ -125,7 +125,11 @@ export function ControlledOllamaCredentialsFormDialog({
 			</div>
 			<div>
 				{dialogOpen && (
-					<Dialog onClose={() => setDialogOpen(false)} title={"Server hinzufügen"}>
+					<Dialog
+						onClose={() => setDialogOpen(false)}
+						title={"Server hinzufügen"}
+						data-testid={"addServerDialog"}
+					>
 						<FormProvider {...form}>
 							<form data-testid="OllamaCredentialsForm" onSubmit={handleSubmit}>
 								<LabeledField label="Name">
@@ -157,7 +161,10 @@ export function ControlledOllamaCredentialsFormDialog({
 								</LabeledField>
 
 								<div className="flex justify-between w-full py-4">
-									<GreyBoarderButton onClick={() => setDialogOpen(false)}>
+									<GreyBoarderButton
+										onClick={() => setDialogOpen(false)}
+										data-testid={"AbbrechenButton"}
+									>
 										<span className="text-gray-600">Abbrechen</span>
 									</GreyBoarderButton>
 									<button className="btn-primary" type="submit">
