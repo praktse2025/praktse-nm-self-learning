@@ -209,34 +209,23 @@ export function OllamaCredentialsFormDialog() {
 				});
 			}
 
-			console.log("u suck")
-
 			const fetchedModels = await getModels({
 				endpointUrl: data.endpointUrl,
 				token: data.token
 			});
 
-			if (
-				!trpcReturn ||
-				!trpcReturn.id ||
-				!trpcReturn.name ||
-				!trpcReturn.token ||
-				!trpcReturn.endpointUrl
-			) {
-				throw new Error("trpcReturn is missing required fields");
-			}
-
 			return {
-				id: trpcReturn.id,
-				name: trpcReturn.name,
-				token: trpcReturn.token,
-				endpointUrl: trpcReturn.endpointUrl,
+				// Check for null values and empty returns
+				id: trpcReturn?.id ?? "",
+				name: trpcReturn?.name ?? "",
+				token: trpcReturn?.token ?? "",
+				endpointUrl: trpcReturn?.endpointUrl ?? "",
 				available: fetchedModels?.success ?? false,
 				ollamaModels: (fetchedModels?.models ?? []).map(modelName => ({
 					id: "",
 					toggle: false,
 					name: modelName,
-					ollamaCredentialsId: trpcReturn.id
+					ollamaCredentialsId: trpcReturn?.id ?? ""
 				}))
 			} satisfies OllamaCredToggle;
 		} catch (error) {
@@ -390,7 +379,7 @@ export function ControlledOllamaModelForm({
 
 								<div className="py-2">
 									{cred.ollamaModels?.map((model, modelIndex) => (
-										<div key={model.id} className="flex items-center gap-2">
+										<div key={model.id} className="flex items-center gap-2 py-2">
 											<Toggle
 												data-testid={`toggle-button+${model.id}`}
 												value={model.toggle}
