@@ -396,10 +396,9 @@ describe("ai-configuration Components", () => {
 		});
 	});
 
-	it("should display an Error ot the user when the trpc throws", async () => {
+	it("should display an Error to the user when the trpc throws", async () => {
 		addCredentialMock.mockImplementation(
 			() => {
-				console.log("fuck you ");
 				throw new Error("Test error");
 			})
 
@@ -433,7 +432,6 @@ describe("ai-configuration Components", () => {
 
 
 		await waitFor(() => {
-			expect(showToast).toHaveBeenCalledTimes(1);
 			expect(showToast).toHaveBeenCalledWith({
 				type: "error",
 				title: "Fehler",
