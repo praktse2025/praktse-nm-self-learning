@@ -34,7 +34,7 @@ export async function getAvailableModelsOnEndpoint(
 	endpointURL: string,
 	token: string
 ): Promise<string[] | null> {
-	const apiUrl = `${endpointURL}/v1/models`;
+	const apiUrl = `${endpointURL}/api/models`;
 
 	try {
 		const response = await fetch(apiUrl, {
@@ -70,7 +70,7 @@ export async function chatWithLLM(message: string, systemPrompt: string): Promis
 		return null;
 	}
 
-	const apiUrl = `${payload.proxyUrl}/v1/chat/completions`;
+	const apiUrl = `${payload.proxyUrl}/api/chat/completions`;
 
 	try {
 		const response = await fetch(apiUrl, {
