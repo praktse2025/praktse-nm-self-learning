@@ -379,7 +379,7 @@ export function ControlledOllamaModelForm({
 
 								<div className="py-2">
 									{cred.ollamaModels?.map((model, modelIndex) => (
-										<div key={model.id} className="flex items-center gap-2 py-2">
+										<div key={model.name} className="flex items-center gap-2 py-2">
 											<Toggle
 												data-testid={`toggle-button+${model.id}`}
 												value={model.toggle}
