@@ -103,7 +103,7 @@ export function ControlledOllamaCredentialsFormDialog({
 	async function submit(data: OllamaCredToggle) {
 		const submitReturn = await onSubmit(data);
 
-		console.log(submitReturn);
+		console.log("Hallo" + submitReturn);
 
 		if (submitReturn) {
 			setCredentials([...credentials, data]);
@@ -207,6 +207,7 @@ export function OllamaCredentialsFormDialog() {
 					title: "Fehler",
 					subtitle: "Der Server mit der URL ist bereits vorhanden"
 				});
+				return null;
 			}
 
 			const fetchedModels = await getModels({
@@ -254,6 +255,10 @@ export function OllamaModelForm() {
 		let firstRun = true;
 
 		for (const cred of credentials) {
+			if (!cred.ollamaModels || cred.ollamaModels.length === 0) {
+				continue; // Skip this iteration if ollamaModels is empty or undefined
+			}
+
 			for (const model of cred.ollamaModels) {
 				if (model.toggle) {
 					if (!firstRun) {
@@ -262,7 +267,7 @@ export function OllamaModelForm() {
 							title: "Fehler",
 							subtitle: "Es kann nur ein Modell gleichzeitig aktiviert werden."
 						});
-						return;
+						return; // Exit the function if more than one model is toggled
 					}
 					firstRun = false;
 					try {
@@ -326,14 +331,14 @@ export function ControlledOllamaModelForm({
 
 	// Removes a credential from the UI state
 	function removeCredential(data: CredentialsFormData) {
-		setCredentials(credentials.filter(cred => cred.name !== data.name)); // Remove by name
+		setCredentials(credentials.filter(cred => cred.endpointUrl !== data.endpointUrl)); // Remove by name
 	}
 
 	// Handles the removal process, updating both UI and DB
 	function handleRemove(index: number) {
 		const credToRemove = credentials[index];
 		removeCredential(credToRemove);
-		removeCredentialFromDB({ id: credToRemove.id });
+		removeCredentialFromDB({enpointUrl: credToRemove.endpointUrl});
 	}
 
 	return (
@@ -394,12 +399,13 @@ export function ControlledOllamaModelForm({
 							</div>
 						))}
 					</div>
-
-					<div className="flex justify-end mt-8">
-						<button type="submit" className="btn-primary px-6 py-2 rounded-lg">
-							Speichern
-						</button>
-					</div>
+					{credentials.length > 0 &&
+						<div className="flex justify-end mt-8">
+							<button type="submit" className="btn-primary px-6 py-2 rounded-lg">
+								Speichern
+							</button>
+						</div>
+					}
 				</form>
 			</FormProvider>
 		</div>

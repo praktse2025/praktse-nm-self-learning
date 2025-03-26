@@ -15,6 +15,7 @@ export const ollamaConfigRouter = t.router({
 			try {
 				return await database.ollamaCredentials.create({
 					data: {
+						id: input.id ?? undefined,
 						token: input.token,
 						name: input.name,
 						endpointUrl: input.endpointUrl,
@@ -26,7 +27,7 @@ export const ollamaConfigRouter = t.router({
 								}))
 							}
 							: undefined
-					}
+					}, select: {id: true, token: true, name: true, endpointUrl: true, ollamaModels: true}
 				});
 			} catch (error) {
 				console.error("Error adding Ollama credentials:", error);
@@ -54,17 +55,16 @@ export const ollamaConfigRouter = t.router({
 		}
 	}),
 	removeCredentials: authProcedure
-		.input(z.object({id: z.string()}))
+		.input(z.object({enpointUrl: z.string().url()}))
 		.mutation(async ({input, ctx}) => {
 			if (ctx.user?.role !== "ADMIN") {
 				console.log("Unauthorized access attempt to remove credentials.");
 				return null;
 			}
-			console.log(input.id);
 
 			try {
 				return await database.ollamaCredentials.delete({
-					where: {id: input.id}
+					where: {endpointUrl: input.enpointUrl}
 				});
 			} catch (error) {
 				console.error("Error removing Ollama credentials:", error);
