@@ -3,12 +3,12 @@ import { fireEvent, render, renderHook, screen, waitFor } from "@testing-library
 import userEvent from "@testing-library/user-event";
 import {
 	ControlledOllamaCredentialsFormDialog,
-	ControlledOllamaModelForm,
 	CredentialsContext,
 	CredentialsContextType,
 	getCredentials,
 	OllamaCredentialsFormDialog,
 	OllamaCredToggle,
+	OllamaModelForm,
 	useCredentialsContext
 } from "./edit-ollamaConfig";
 import { TextDecoder, TextEncoder } from "util";
@@ -148,6 +148,8 @@ describe("ai-configuration Components", () => {
 				}
 			];
 			const expectedCredentials = {
+				id: null,
+				ollamaModels: [],
 				name: "TestModel1",
 				token: "234234334",
 				endpointUrl: "http://test.de"
@@ -156,7 +158,7 @@ describe("ai-configuration Components", () => {
 			// Act
 			render(
 				<TestWrapper testCredentials={dummyCredentials}>
-					<ControlledOllamaCredentialsFormDialog onSubmit={addCredentialMock} />
+					<OllamaCredentialsFormDialog />
 				</TestWrapper>
 			);
 
@@ -207,7 +209,7 @@ describe("ai-configuration Components", () => {
 			// Act
 			render(
 				<TestWrapper testCredentials={dummyCredentials}>
-					<ControlledOllamaCredentialsFormDialog onSubmit={addCredentialMock} />
+					<OllamaCredentialsFormDialog />
 				</TestWrapper>
 			);
 
@@ -246,7 +248,6 @@ describe("ai-configuration Components", () => {
 			// Assert
 			await waitFor(() => {
 				expect(addCredentialMock).toHaveBeenCalledTimes(2);
-
 			});
 		});
 
@@ -272,7 +273,7 @@ describe("ai-configuration Components", () => {
 			// Act
 			render(
 				<TestWrapper testCredentials={dummyCredentials}>
-					<ControlledOllamaCredentialsFormDialog onSubmit={addCredentialMock} />
+					<OllamaCredentialsFormDialog />
 				</TestWrapper>
 			);
 
@@ -293,10 +294,6 @@ describe("ai-configuration Components", () => {
 	});
 
 	describe("CredentialsFormDialog", () => {
-		beforeEach(() => {
-			addCredentialMock.mockClear();
-		});
-
 		it("submits form via OllamaCredentialsFormDialog and triggers all async logic (addCredentials + getModels)", async () => {
 			const mockSetCredentials = jest.fn();
 
@@ -304,7 +301,7 @@ describe("ai-configuration Components", () => {
 				id: "cred-test",
 				name: "New Server",
 				token: "token123",
-				endpointUrl: "http://localhost:1234"
+				endpointUrl: "http://localhost"
 			});
 
 			getModelsMock.mockResolvedValue({
@@ -371,7 +368,7 @@ describe("ai-configuration Components", () => {
 			// Act
 			render(
 				<TestWrapper testCredentials={dummyCredentials}>
-					<ControlledOllamaModelForm onSubmit={addModelMock}/>
+					<OllamaModelForm />
 				</TestWrapper>
 			);
 
@@ -389,7 +386,12 @@ describe("ai-configuration Components", () => {
 			// Assert
 			await waitFor(() => {
 				expect(addModelMock).toHaveBeenCalledTimes(1)
-				expect(addModelMock).toHaveBeenCalledWith(dummyCredentials)
+				expect(addModelMock).toHaveBeenCalledWith({
+					id: null,
+					name: "Model A",
+					ollamaCredentialsId: "cred1",
+					toggle: true
+				});
 			});
 		});
 
@@ -422,7 +424,7 @@ describe("ai-configuration Components", () => {
 			// Act
 			render(
 				<TestWrapper testCredentials={dummyCredentials}>
-					<ControlledOllamaModelForm onSubmit={addModelMock}/>
+					<OllamaModelForm />
 				</TestWrapper>
 			);
 
@@ -433,7 +435,12 @@ describe("ai-configuration Components", () => {
 			// Assert
 			await waitFor(() => {
 				expect(addModelMock).toHaveBeenCalledTimes(1)
-				expect(addModelMock).toHaveBeenCalledWith(dummyCredentials)
+				expect(addModelMock).toHaveBeenCalledWith({
+					id: null,
+					name: "Model A",
+					ollamaCredentialsId: "cred1",
+					toggle: true
+				});
 			});
 		});
 
@@ -487,15 +494,12 @@ describe("ai-configuration Components", () => {
 			// Act
 			render(
 				<TestWrapper testCredentials={dummyCredentials}>
-					<ControlledOllamaModelForm onSubmit={addModelMock}/>
+					<OllamaModelForm />
 				</TestWrapper>
 			);
 
-			const form = screen.getByTestId("OllamaModelForm");
-
 			const credentialsRemoveButtonB = screen.getByTestId(`CredentialsRemoveButton+${dummyCredentials[1].id}`)
 
-			const checkboxes = screen.getAllByRole("checkbox");
 			await userEvent.click(credentialsRemoveButtonB);
 
 			// Assert

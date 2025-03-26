@@ -209,6 +209,8 @@ export function OllamaCredentialsFormDialog() {
 				});
 			}
 
+			console.log("u suck")
+
 			const fetchedModels = await getModels({
 				endpointUrl: data.endpointUrl,
 				token: data.token
