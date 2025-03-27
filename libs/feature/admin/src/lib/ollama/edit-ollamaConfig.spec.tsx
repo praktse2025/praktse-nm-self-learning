@@ -586,7 +586,7 @@ describe("ai-configuration Components", () => {
 			});
 		});
 
-		it("Should removeCredentials with enpointUrl: https://chatgpt.com", async () => {
+		it("Should removeCredentials with endpointUrl: https://chatgpt.com", async () => {
 			// Arrange
 			const dummyCredentials = [
 				{

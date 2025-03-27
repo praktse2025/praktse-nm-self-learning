@@ -351,6 +351,7 @@ export function ControlledOllamaModelForm({
 	function handleRemove(index: number) {
 		const credToRemove = credentials[index];
 		removeCredential(credToRemove);
+		console.log(credToRemove.endpointUrl)
 		removeCredentialFromDB({endpointUrl: credToRemove.endpointUrl});
 	}
 

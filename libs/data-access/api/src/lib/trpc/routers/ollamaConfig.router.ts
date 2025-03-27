@@ -55,7 +55,7 @@ export const ollamaConfigRouter = t.router({
 		}
 	}),
 	removeCredentials: authProcedure
-		.input(z.object({enpointUrl: z.string().url()}))
+		.input(z.object({endpointUrl: z.string().url()}))
 		.mutation(async ({input, ctx}) => {
 			if (ctx.user?.role !== "ADMIN") {
 				console.log("Unauthorized access attempt to remove credentials.");
@@ -64,7 +64,7 @@ export const ollamaConfigRouter = t.router({
 
 			try {
 				return await database.ollamaCredentials.delete({
-					where: {endpointUrl: input.enpointUrl}
+					where: {endpointUrl: input.endpointUrl}
 				});
 			} catch (error) {
 				console.error("Error removing Ollama credentials:", error);
