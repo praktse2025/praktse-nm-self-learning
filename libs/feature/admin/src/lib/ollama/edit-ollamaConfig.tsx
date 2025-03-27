@@ -15,6 +15,7 @@ import {LabeledField} from "@self-learning/ui/forms";
 import {database} from "@self-learning/database";
 import {ExclamationTriangleIcon, TrashIcon} from "@heroicons/react/24/outline";
 import {PlusIcon} from "@heroicons/react/24/solid";
+import {CenteredSection} from "@self-learning/ui/layouts";
 
 export type CredentialsContextType = {
 	credentials: OllamaCredToggle[];
@@ -101,14 +102,22 @@ export function ControlledOllamaCredentialsFormDialog({
 
 	// Handles form submission
 	async function submit(data: OllamaCredToggle) {
+		if (!data.token || !data.endpointUrl || !data.name) {
+			showToast({
+				type: "error",
+				title: "Fehler",
+				subtitle: "Alle Felder müssen ausgefüllt sein"
+			});
+			return;
+		}
 		const submitReturn = await onSubmit(data);
-
-		console.log("Hallo" + submitReturn);
 
 		if (submitReturn) {
 			setCredentials([...credentials, data]);
 		}
 		setDialogOpen(false);
+
+		return;
 	}
 
 	const handleSubmit = form.handleSubmit(submit);
@@ -164,10 +173,14 @@ export function ControlledOllamaCredentialsFormDialog({
 									<GreyBoarderButton
 										onClick={() => setDialogOpen(false)}
 										data-testid={"AbbrechenButton"}
+										className="px-6 py-2 w-[120px] flex justify-center"
 									>
 										<span className="text-gray-600">Abbrechen</span>
 									</GreyBoarderButton>
-									<button className="btn-primary" type="submit">
+									<button
+										className="btn-primary px-6 py-2 w-[120px] flex justify-center"
+										type="submit"
+									>
 										Speichern
 									</button>
 								</div>
@@ -298,7 +311,7 @@ export function OllamaModelForm() {
 }
 
 export function ControlledOllamaModelForm({
-											  onSubmit
+											  onSubmit,
 										  }: {
 	onSubmit: (credentials: OllamaCredToggle[]) => void;
 }) {
@@ -313,14 +326,14 @@ export function ControlledOllamaModelForm({
 				id: model.id,
 				name: model.name,
 				ollamaCredentialsId: model.ollamaCredentialsId,
-				toggle: model.toggle
+				toggle: model.toggle,
 			}))
 		}))
 	});
 
 	const handleToggleChange = (credsIndex: number, modelIndex: number) => {
-		const updatedCredentials = credentials.map(creds => {
-			creds.ollamaModels.forEach(model => {
+		const updatedCredentials = credentials.map((creds) => {
+			creds.ollamaModels.forEach((model) => {
 				model.toggle = false; // Reset all toggles to false
 			});
 			return creds;
@@ -338,76 +351,84 @@ export function ControlledOllamaModelForm({
 	function handleRemove(index: number) {
 		const credToRemove = credentials[index];
 		removeCredential(credToRemove);
-		removeCredentialFromDB({enpointUrl: credToRemove.endpointUrl});
+		removeCredentialFromDB({endpointUrl: credToRemove.endpointUrl});
 	}
 
 	return (
-		<div className="w-full">
-			<FormProvider {...form}>
+		<CenteredSection className="bg-gray-50">
+			{credentials.map((cred, credsIndex) => (
 				<form
-					onSubmit={e => {
+					key={cred.id}
+					onSubmit={(e) => {
 						e.preventDefault();
 						onSubmit(credentials);
 					}}
 					data-testid="OllamaModelForm"
 				>
-					<div className="space-y-4 mt-4">
-						{credentials.map((cred, credsIndex) => (
-							<div
-								key={cred.id}
-								className="relative border rounded-2xl p-4 shadow-sm bg-white"
+					<SettingSection title={cred.name}>
+						<div className="flex justify-between items-center">
+							<div>
+								<p className="text-sm text-gray-500">{cred.endpointUrl}</p>
+								{!cred.available && (
+									<div className="flex items-center gap-2 text-red-500 text-sm">
+										<ExclamationTriangleIcon className="w-5 h-5"/>
+										Server nicht erreichbar!
+									</div>
+								)}
+							</div>
+							<button
+								type="button"
+								onClick={() => handleRemove(credsIndex)}
+								className="text-red-500 hover:text-red-700"
+								aria-label="Server löschen"
+								data-testid={`CredentialsRemoveButton+${cred.id}`}
 							>
-								<button
-									type="button"
-									onClick={() => handleRemove(credsIndex)}
-									className="absolute top-3 right-3 hover:text-red-600 text-red-400"
-									aria-label="Server löschen"
-									data-testid={`CredentialsRemoveButton+${cred.id}`}
-								>
-									<TrashIcon className="h-7 w-7"/>
-								</button>
+								<TrashIcon className="h-6 w-6"/>
+							</button>
+						</div>
 
-								<div className="min-w-0 flex-shrink-0 py-2">
-									<p className="font-medium text-gray-900">{cred.name}</p>
-									<p className="text-sm text-gray-500 truncate">
-										{cred.endpointUrl}
-									</p>
-									{!cred.available && (
-										<div className="flex items-center gap-2">
-											<ExclamationTriangleIcon className="w-5 h-5 text-red-500"/>
-											<span className="text-sm text-red-500">
-												Server nicht erreichbar!
-											</span>
-										</div>
-									)}
-								</div>
-
-								<div className="py-2">
-									{cred.ollamaModels?.map((model, modelIndex) => (
-										<div key={model.name} className="flex items-center gap-2 py-2">
-											<Toggle
-												data-testid={`toggle-button+${model.id}`}
-												value={model.toggle}
-												onChange={() =>
-													handleToggleChange(credsIndex, modelIndex)
-												}
-												label={model.name}
-											/>
-										</div>
-									))}
-								</div>
+						{cred.ollamaModels?.map((model, modelIndex) => (
+							<div key={model.name} className="flex items-center gap-2 mt-2">
+								<Toggle
+									data-testid={`toggle-button+${model.id}`}
+									value={model.toggle}
+									onChange={() => handleToggleChange(credsIndex, modelIndex)}
+									label={model.name}
+								/>
 							</div>
 						))}
-					</div>
-					{credentials.length > 0 &&
 						<div className="flex justify-end mt-8">
-							<button type="submit" className="btn-primary px-6 py-2 rounded-lg">
+							<button type="submit" className="btn-primary">
 								Speichern
 							</button>
 						</div>
-					}
+					</SettingSection>
 				</form>
-			</FormProvider>
-		</div>
+			))}
+
+			{credentials.length === 0 && (
+				<p className="text-gray-500 mt-8 text-center">
+					Keine gespeicherten Server vorhanden.
+				</p>
+			)}
+		</CenteredSection>
 	);
 }
+
+
+function SettingSection({
+							title,
+							children,
+						}: {
+	title: string;
+	children: React.ReactNode;
+}) {
+	return (
+		<section className="space-y-4 mt-6 rounded-lg border bg-gray-100 p-6">
+			<h3 className="font-semibold">{title}</h3>
+			{children}
+		</section>
+	);
+}
+
+
