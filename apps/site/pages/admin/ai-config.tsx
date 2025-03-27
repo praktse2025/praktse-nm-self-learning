@@ -64,7 +64,7 @@ export default function AiConfigPage({credentials}: { credentials: OllamaCredTog
 			<div className="bg-gray-50 min-h-screen flex justify-center py-10">
 				<div className="w-full max-w-2xl flex flex-col gap-4">
 					<div className="flex items-center justify-between">
-						<h2 className="text-lg font-semibold">Server</h2>
+						<h1 className="text-2xl font-bold">Server</h1>
 						<OllamaCredentialsFormDialog/>
 					</div>
 
