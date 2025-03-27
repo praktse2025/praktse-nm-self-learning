@@ -364,7 +364,7 @@ export function ControlledOllamaModelForm({
 						e.preventDefault();
 						onSubmit(credentials);
 					}}
-					data-testid="OllamaModelForm"
+					data-testid={`OllamaModelForm+${cred.id}`}
 				>
 					<SettingSection title={cred.name}>
 						<div className="flex justify-between items-center">

@@ -12,7 +12,7 @@ import {
 	useCredentialsContext
 } from "./edit-ollamaConfig";
 import {TextDecoder, TextEncoder} from "util";
-import {useState} from "react";
+import {act, useState} from "react";
 import {database} from "@self-learning/database";
 import {OllamaModelsSchema} from "@self-learning/types";
 import {z} from "zod";
@@ -256,6 +256,70 @@ describe("ai-configuration Components", () => {
 			// Assert
 			await waitFor(() => {
 				expect(addCredentialMock).toHaveBeenCalledTimes(2);
+				expect(showToast).toHaveBeenCalledWith({
+					type: "error",
+					title: "Fehler",
+					subtitle: "Der Server mit der URL ist bereits vorhanden"
+				})
+			});
+		});
+		it("should remove newly added model from database", async () => {
+			const dummyCredentials: OllamaCredToggle[] = [
+				{
+					id: "1",
+					name: "TestModel1",
+					token: "43434435",
+					endpointUrl: "http://test.de",
+					available: true,
+					ollamaModels: [
+						{
+							id: "",
+							name: "",
+							toggle: false,
+							ollamaCredentialsId: ""
+						}
+					]
+				}
+			];
+
+			const expectedCredentials = {
+				endpointUrl: "http://test.de"
+			}
+
+			// Act
+			render(
+				<TestWrapper testCredentials={dummyCredentials}>
+					<OllamaCredentialsFormDialog/>
+					<OllamaModelForm/>
+				</TestWrapper>
+			);
+
+			const serverAddButton = screen.getByTestId("ServerAddButton");
+
+			await userEvent.click(serverAddButton);
+
+			const form = screen.getByTestId("OllamaCredentialsForm");
+
+			const credentialNameInput = screen.getByTestId("CredentialName");
+			const credentialTokenInput = screen.getByTestId("CredentialToken");
+			const credentialEndpointUrlInput = screen.getByTestId("CredentialUrl");
+
+			await userEvent.type(credentialNameInput, dummyCredentials[0].name);
+			await userEvent.type(credentialTokenInput, dummyCredentials[0].token);
+			await userEvent.type(credentialEndpointUrlInput, dummyCredentials[0].endpointUrl);
+
+			await act(() => {
+				fireEvent.submit(form);
+			})
+
+			const serverRemoveButton = screen.getByTestId(`CredentialsRemoveButton+${dummyCredentials[0].id}`)
+
+			await userEvent.click(serverRemoveButton);
+
+			// Assert
+			await waitFor(() => {
+				expect(removeCredentialMock).toHaveBeenCalledTimes(1);
+				expect(removeCredentialMock).toHaveBeenCalledWith(expectedCredentials)
 			});
 		});
 
@@ -471,7 +535,7 @@ describe("ai-configuration Components", () => {
 				</TestWrapper>
 			)
 
-			const form = screen.getByTestId("OllamaModelForm");
+			const form = screen.getByTestId(`OllamaModelForm+${dummyCredentials[0].id}`);
 
 			fireEvent.submit(form);
 
@@ -514,7 +578,7 @@ describe("ai-configuration Components", () => {
 				</TestWrapper>
 			);
 
-			const form = screen.getByTestId("OllamaModelForm");
+			const form = screen.getByTestId(`OllamaModelForm+${dummyCredentials[0].id}`);
 
 			const checkboxes = screen.getAllByRole("checkbox");
 			const modelInputA = checkboxes[0];
@@ -570,7 +634,7 @@ describe("ai-configuration Components", () => {
 				</TestWrapper>
 			);
 
-			const form = screen.getByTestId("OllamaModelForm");
+			const form = screen.getByTestId(`OllamaModelForm+${dummyCredentials[0].id}`);
 
 			fireEvent.submit(form);
 
@@ -782,7 +846,8 @@ describe("ai-configuration Components", () => {
 				</TestWrapper>
 			);
 
-			const form = screen.getByTestId("OllamaModelForm");
+			const form = screen.getByTestId(`OllamaModelForm+${dummyCredentials[0].id}`);
+			const form2 = screen.getByTestId(`OllamaModelForm+${dummyCredentials[1].id}`);
 
 			fireEvent.submit(form);
 
@@ -801,7 +866,7 @@ describe("ai-configuration Components", () => {
 
 			const dummyCredentials: OllamaCredToggle[] = [
 				{
-					id: " ",
+					id: "1",
 					name: " ",
 					token: " ",
 					endpointUrl: " ",
@@ -830,7 +895,7 @@ describe("ai-configuration Components", () => {
 				</TestWrapper>
 			);
 
-			const form = screen.getByTestId("OllamaModelForm");
+			const form = screen.getByTestId(`OllamaModelForm+${dummyCredentials[0].id}`);
 
 			const toggleCred1Model1 = screen.getByRole("checkbox");
 
