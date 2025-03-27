@@ -115,6 +115,8 @@ export function ControlledOllamaCredentialsFormDialog({
 		if (submitReturn) {
 			setCredentials([...credentials, data]);
 		}
+
+		form.reset();
 		setDialogOpen(false);
 
 		return;
