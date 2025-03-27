@@ -17,7 +17,6 @@ import {database} from "@self-learning/database";
 import {OllamaModelsSchema} from "@self-learning/types";
 import {z} from "zod";
 import {showToast} from "@self-learning/ui/common";
-import mock = jest.mock;
 
 Object.assign(global, {TextDecoder, TextEncoder});
 
@@ -648,7 +647,7 @@ describe("ai-configuration Components", () => {
 			// Assert
 			await waitFor(() => {
 				expect(removeCredentialMock).toHaveBeenCalledTimes(1)
-				expect(removeCredentialMock).toHaveBeenCalledWith({enpointUrl: dummyCredentials[1].endpointUrl})
+				expect(removeCredentialMock).toHaveBeenCalledWith({endpointUrl: dummyCredentials[1].endpointUrl})
 			});
 		});
 	});

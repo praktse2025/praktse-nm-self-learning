@@ -1,7 +1,7 @@
-import React, { createContext, useContext, useState } from "react";
-import { trpc } from "@self-learning/api-client";
-import { FormProvider, useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import React, {createContext, useContext, useState} from "react";
+import {trpc} from "@self-learning/api-client";
+import {FormProvider, useForm} from "react-hook-form";
+import {zodResolver} from "@hookform/resolvers/zod";
 import * as z from "zod";
 import {
 	Dialog,
@@ -10,11 +10,11 @@ import {
 	showToast,
 	Toggle
 } from "@self-learning/ui/common";
-import { OllamaCredentialsFormSchema, OllamaModelsSchema } from "@self-learning/types";
-import { LabeledField } from "@self-learning/ui/forms";
-import { database } from "@self-learning/database";
-import { ExclamationTriangleIcon, TrashIcon } from "@heroicons/react/24/outline";
-import { PlusIcon } from "@heroicons/react/24/solid";
+import {OllamaCredentialsFormSchema, OllamaModelsSchema} from "@self-learning/types";
+import {LabeledField} from "@self-learning/ui/forms";
+import {database} from "@self-learning/database";
+import {ExclamationTriangleIcon, TrashIcon} from "@heroicons/react/24/outline";
+import {PlusIcon} from "@heroicons/react/24/solid";
 
 export type CredentialsContextType = {
 	credentials: OllamaCredToggle[];
@@ -79,13 +79,13 @@ type CredentialsFormData = {
 
 // Modal form for adding a new Ollama credential
 export function ControlledOllamaCredentialsFormDialog({
-	onSubmit
-}: {
+														  onSubmit
+													  }: {
 	onSubmit: (data: CredentialsFormData) => Promise<OllamaCredToggle | null>;
 }) {
 	const [dialogOpen, setDialogOpen] = useState<boolean>(false);
 
-	const { credentials, setCredentials } = useCredentialsContext();
+	const {credentials, setCredentials} = useCredentialsContext();
 
 	const form = useForm({
 		resolver: zodResolver(OllamaCredentialsFormSchema),
@@ -120,7 +120,7 @@ export function ControlledOllamaCredentialsFormDialog({
 					data-testid="ServerAddButton"
 					onClick={() => setDialogOpen(true)}
 					text="Hinzufügen"
-					icon={<PlusIcon className="icon h-5" />}
+					icon={<PlusIcon className="icon h-5"/>}
 				/>
 			</div>
 			<div>
@@ -181,8 +181,8 @@ export function ControlledOllamaCredentialsFormDialog({
 }
 
 export function OllamaCredentialsFormDialog() {
-	const { mutateAsync: addCredentials } = trpc.ollamaConfig.addCredentials.useMutation();
-	const { mutateAsync: getModels } = trpc.ollama.models.useMutation();
+	const {mutateAsync: addCredentials} = trpc.ollamaConfig.addCredentials.useMutation();
+	const {mutateAsync: getModels} = trpc.ollama.models.useMutation();
 
 	async function onSubmit(data: CredentialsFormData) {
 		const updatedData = {
@@ -241,14 +241,14 @@ export function OllamaCredentialsFormDialog() {
 
 	return (
 		<div>
-			<ControlledOllamaCredentialsFormDialog onSubmit={onSubmit} />
+			<ControlledOllamaCredentialsFormDialog onSubmit={onSubmit}/>
 		</div>
 	);
 }
 
 // Form to manage Ollama models with toggle functionality
 export function OllamaModelForm() {
-	const { mutateAsync: addModel } = trpc.ollamaConfig.addModel.useMutation();
+	const {mutateAsync: addModel} = trpc.ollamaConfig.addModel.useMutation();
 
 	// Handles model activation, ensuring only one model is active at a time
 	async function onSubmit(credentials: OllamaCredToggle[]) {
@@ -271,7 +271,7 @@ export function OllamaModelForm() {
 					}
 					firstRun = false;
 					try {
-						await addModel({ ...model, id: null });
+						await addModel({...model, id: null});
 						showToast({
 							type: "success",
 							title: "Erfolg",
@@ -292,19 +292,19 @@ export function OllamaModelForm() {
 
 	return (
 		<div>
-			<ControlledOllamaModelForm onSubmit={onSubmit} />
+			<ControlledOllamaModelForm onSubmit={onSubmit}/>
 		</div>
 	);
 }
 
 export function ControlledOllamaModelForm({
-	onSubmit
-}: {
+											  onSubmit
+										  }: {
 	onSubmit: (credentials: OllamaCredToggle[]) => void;
 }) {
-	const { mutateAsync: removeCredentialFromDB } =
+	const {mutateAsync: removeCredentialFromDB} =
 		trpc.ollamaConfig.removeCredentials.useMutation();
-	const { credentials = [], setCredentials } = useCredentialsContext();
+	const {credentials = [], setCredentials} = useCredentialsContext();
 
 	const form = useForm({
 		resolver: zodResolver(z.array(OllamaModelsSchema)),
@@ -364,7 +364,7 @@ export function ControlledOllamaModelForm({
 									aria-label="Server löschen"
 									data-testid={`CredentialsRemoveButton+${cred.id}`}
 								>
-									<TrashIcon className="h-7 w-7" />
+									<TrashIcon className="h-7 w-7"/>
 								</button>
 
 								<div className="min-w-0 flex-shrink-0 py-2">
@@ -374,7 +374,7 @@ export function ControlledOllamaModelForm({
 									</p>
 									{!cred.available && (
 										<div className="flex items-center gap-2">
-											<ExclamationTriangleIcon className="w-5 h-5 text-red-500" />
+											<ExclamationTriangleIcon className="w-5 h-5 text-red-500"/>
 											<span className="text-sm text-red-500">
 												Server nicht erreichbar!
 											</span>

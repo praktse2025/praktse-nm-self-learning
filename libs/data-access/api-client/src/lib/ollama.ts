@@ -1,4 +1,4 @@
-import { database } from "@self-learning/database";
+import {database} from "@self-learning/database";
 
 async function getPayload() {
 	try {
@@ -82,8 +82,8 @@ export async function chatWithLLM(message: string, systemPrompt: string): Promis
 			body: JSON.stringify({
 				model: payload.model,
 				messages: [
-					{ role: "system", content: systemPrompt },
-					{ role: "user", content: message }
+					{role: "system", content: systemPrompt},
+					{role: "user", content: message}
 				],
 				stream: false
 			})
