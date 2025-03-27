@@ -587,7 +587,7 @@ describe("ai-configuration Components", () => {
 			});
 		});
 
-		it("Should removeCredentials with id: cred2", async () => {
+		it("Should removeCredentials with enpointUrl: https://chatgpt.com", async () => {
 			// Arrange
 			const dummyCredentials = [
 				{
@@ -648,7 +648,7 @@ describe("ai-configuration Components", () => {
 			// Assert
 			await waitFor(() => {
 				expect(removeCredentialMock).toHaveBeenCalledTimes(1)
-				expect(removeCredentialMock).toHaveBeenCalledWith({id: dummyCredentials[1].endpointUrl})
+				expect(removeCredentialMock).toHaveBeenCalledWith({enpointUrl: dummyCredentials[1].endpointUrl})
 			});
 		});
 	});
