@@ -648,7 +648,7 @@ describe("ai-configuration Components", () => {
 			// Assert
 			await waitFor(() => {
 				expect(removeCredentialMock).toHaveBeenCalledTimes(1)
-				expect(removeCredentialMock).toHaveBeenCalledWith({id: dummyCredentials[1].id})
+				expect(removeCredentialMock).toHaveBeenCalledWith({id: dummyCredentials[1].endpointUrl})
 			});
 		});
 	});
