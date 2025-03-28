@@ -1,8 +1,7 @@
-import React, {createContext, useContext, useState} from "react";
-import {getAvailableModelsOnEndpoint, trpc} from "@self-learning/api-client";
-import {FormProvider, useForm} from "react-hook-form";
-import {zodResolver} from "@hookform/resolvers/zod";
-import * as z from "zod";
+import React, { createContext, useContext, useState } from "react";
+import { getAvailableModelsOnEndpoint, trpc } from "@self-learning/api-client";
+import { FormProvider, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
 	Dialog,
 	GreyBoarderButton,
@@ -10,26 +9,23 @@ import {
 	showToast,
 	Toggle
 } from "@self-learning/ui/common";
-import {OllamaCredentialsFormSchema, OllamaModelsSchema} from "@self-learning/types";
-import {LabeledField} from "@self-learning/ui/forms";
-import {database} from "@self-learning/database";
-import {ExclamationTriangleIcon, TrashIcon} from "@heroicons/react/24/outline";
-import {PlusIcon} from "@heroicons/react/24/solid";
-import {CenteredSection} from "@self-learning/ui/layouts";
+import { OllamaCredentialsFormSchema } from "@self-learning/types";
+import { LabeledField } from "@self-learning/ui/forms";
+import { database } from "@self-learning/database";
+import { ExclamationTriangleIcon, TrashIcon } from "@heroicons/react/24/outline";
+import { PlusIcon } from "@heroicons/react/24/solid";
+import { CenteredSection } from "@self-learning/ui/layouts";
 
 export type CredentialsContextType = {
 	credentials: OllamaCredToggle[];
 	setCredentials: (creds: OllamaCredToggle[]) => void;
 };
 
-// Context for storing and managing Ollama credentials
 export const CredentialsContext = createContext<CredentialsContextType | undefined>(undefined);
 
-// Custom hook to use the credentials context safely
 export function useCredentialsContext() {
 	const context = useContext(CredentialsContext);
 	if (!context) {
-		// Enforce usage within the appropriate provider
 		throw new Error("useCrednetialsContext must be used within OllamaConfigPage");
 	}
 	return context;
@@ -40,7 +36,7 @@ export type OllamaCredToggle = Awaited<ReturnType<typeof getCredentials>>[number
 export async function getUpdatedCredentials() {
 	const credentials = await getCredentials();
 
-	const updatedCredentials = await Promise.all(
+	return await Promise.all(
 		credentials.map(async cred => {
 			const availableModels = await getAvailableModelsOnEndpoint(
 				cred.endpointUrl,
@@ -52,7 +48,7 @@ export async function getUpdatedCredentials() {
 					...cred,
 					available: false
 				};
-				return cred; // Return the original credential if fetch fails
+				return cred;
 			}
 
 			const existingModelNames = new Set(cred.ollamaModels.map(model => model.name));
@@ -66,17 +62,14 @@ export async function getUpdatedCredentials() {
 					toggle: false
 				}));
 
-			// Return a new object instead of mutating the original one
 			return {
 				...cred,
 				ollamaModels: [...cred.ollamaModels, ...newModels]
 			};
 		})
 	);
-	return updatedCredentials;
 }
 
-// Fetches stored credentials from the database and returns them in a structured format.
 export async function getCredentials() {
 	const credentials = await database.ollamaCredentials.findMany({
 		select: {
@@ -94,7 +87,6 @@ export async function getCredentials() {
 		}
 	});
 
-	// Map over credentials and add a toggle field to models
 	return credentials.map(creds => {
 		return {
 			...creds,
@@ -117,15 +109,14 @@ type CredentialsFormData = {
 	endpointUrl: string;
 };
 
-// Modal form for adding a new Ollama credential
 export function ControlledOllamaCredentialsFormDialog({
-														  onSubmit
-													  }: {
+	onSubmit
+}: {
 	onSubmit: (data: CredentialsFormData) => Promise<OllamaCredToggle | null>;
 }) {
 	const [dialogOpen, setDialogOpen] = useState<boolean>(false);
 
-	const {credentials, setCredentials} = useCredentialsContext();
+	const { credentials, setCredentials } = useCredentialsContext();
 
 	const form = useForm({
 		resolver: zodResolver(OllamaCredentialsFormSchema),
@@ -139,7 +130,6 @@ export function ControlledOllamaCredentialsFormDialog({
 		}
 	});
 
-	// Handles form submission
 	async function submit(data: OllamaCredToggle) {
 		if (!data.token || !data.endpointUrl || !data.name) {
 			showToast({
@@ -170,7 +160,7 @@ export function ControlledOllamaCredentialsFormDialog({
 					data-testid="ServerAddButton"
 					onClick={() => setDialogOpen(true)}
 					text="Hinzufügen"
-					icon={<PlusIcon className="icon h-5"/>}
+					icon={<PlusIcon className="icon h-5" />}
 				/>
 			</div>
 			<div>
@@ -235,8 +225,8 @@ export function ControlledOllamaCredentialsFormDialog({
 }
 
 export function OllamaCredentialsFormDialog() {
-	const {mutateAsync: addCredentials} = trpc.ollamaConfig.addCredentials.useMutation();
-	const {mutateAsync: getModels} = trpc.ollama.models.useMutation();
+	const { mutateAsync: addCredentials } = trpc.ollamaConfig.addCredentials.useMutation();
+	const { mutateAsync: getModels } = trpc.ollama.models.useMutation();
 
 	async function onSubmit(data: CredentialsFormData) {
 		const updatedData = {
@@ -270,7 +260,6 @@ export function OllamaCredentialsFormDialog() {
 			});
 
 			return {
-				// Check for null values and empty returns
 				id: trpcReturn?.id ?? "",
 				name: trpcReturn?.name ?? "",
 				token: trpcReturn?.token ?? "",
@@ -295,14 +284,14 @@ export function OllamaCredentialsFormDialog() {
 
 	return (
 		<div>
-			<ControlledOllamaCredentialsFormDialog onSubmit={onSubmit}/>
+			<ControlledOllamaCredentialsFormDialog onSubmit={onSubmit} />
 		</div>
 	);
 }
 
 // Form to manage Ollama models with toggle functionality
 export function OllamaModelForm() {
-	const {mutateAsync: addModel} = trpc.ollamaConfig.addModel.useMutation();
+	const { mutateAsync: addModel } = trpc.ollamaConfig.addModel.useMutation();
 
 	// Handles model activation, ensuring only one model is active at a time
 	async function onSubmit(credentials: OllamaCredToggle[]) {
@@ -321,11 +310,11 @@ export function OllamaModelForm() {
 							title: "Fehler",
 							subtitle: "Es kann nur ein Modell gleichzeitig aktiviert werden."
 						});
-						return; // Exit the function if more than one model is toggled
+						return;
 					}
 					firstRun = false;
 					try {
-						await addModel({...model, id: null});
+						await addModel({ ...model, id: null });
 						showToast({
 							type: "success",
 							title: "Erfolg",
@@ -346,35 +335,23 @@ export function OllamaModelForm() {
 
 	return (
 		<div>
-			<ControlledOllamaModelForm onSubmit={onSubmit}/>
+			<ControlledOllamaModelForm onSubmit={onSubmit} />
 		</div>
 	);
 }
 
 export function ControlledOllamaModelForm({
-											  onSubmit,
-										  }: {
+	onSubmit
+}: {
 	onSubmit: (credentials: OllamaCredToggle[]) => void;
 }) {
-	const {mutateAsync: removeCredentialFromDB} =
+	const { mutateAsync: removeCredentialFromDB } =
 		trpc.ollamaConfig.removeCredentials.useMutation();
-	const {credentials = [], setCredentials} = useCredentialsContext();
-
-	const form = useForm({
-		resolver: zodResolver(z.array(OllamaModelsSchema)),
-		defaultValues: credentials.map(creds => ({
-			ollamaModels: creds.ollamaModels?.map(model => ({
-				id: model.id,
-				name: model.name,
-				ollamaCredentialsId: model.ollamaCredentialsId,
-				toggle: model.toggle,
-			}))
-		}))
-	});
+	const { credentials = [], setCredentials } = useCredentialsContext();
 
 	const handleToggleChange = (credsIndex: number, modelIndex: number) => {
-		const updatedCredentials = credentials.map((creds) => {
-			creds.ollamaModels.forEach((model) => {
+		const updatedCredentials = credentials.map(creds => {
+			creds.ollamaModels.forEach(model => {
 				model.toggle = false; // Reset all toggles to false
 			});
 			return creds;
@@ -392,8 +369,8 @@ export function ControlledOllamaModelForm({
 	function handleRemove(index: number) {
 		const credToRemove = credentials[index];
 		removeCredential(credToRemove);
-		console.log(credToRemove.endpointUrl)
-		removeCredentialFromDB({endpointUrl: credToRemove.endpointUrl});
+		console.log(credToRemove.endpointUrl);
+		removeCredentialFromDB({ endpointUrl: credToRemove.endpointUrl });
 	}
 
 	return (
@@ -401,32 +378,34 @@ export function ControlledOllamaModelForm({
 			{credentials.map((cred, credsIndex) => (
 				<form
 					key={cred.id}
-					onSubmit={(e) => {
+					onSubmit={e => {
 						e.preventDefault();
 						onSubmit(credentials);
 					}}
 					data-testid={`OllamaModelForm+${cred.id}`}
+					className="relative"
 				>
 					<SettingSection title={cred.name}>
+						<button
+							type="button"
+							onClick={() => handleRemove(credsIndex)}
+							className="absolute top-2 right-2 hover:text-red-600 text-red-400"
+							aria-label="Server löschen"
+							data-testid={`CredentialsRemoveButton+${cred.id}`}
+						>
+							<TrashIcon className="h-6 w-6" />
+						</button>
+
 						<div className="flex justify-between items-center">
 							<div>
 								<p className="text-sm text-gray-500">{cred.endpointUrl}</p>
 								{!cred.available && (
 									<div className="flex items-center gap-2 text-red-500 text-sm">
-										<ExclamationTriangleIcon className="w-5 h-5"/>
+										<ExclamationTriangleIcon className="w-5 h-5" />
 										Server nicht erreichbar!
 									</div>
 								)}
 							</div>
-							<button
-								type="button"
-								onClick={() => handleRemove(credsIndex)}
-								className="text-red-500 hover:text-red-700"
-								aria-label="Server löschen"
-								data-testid={`CredentialsRemoveButton+${cred.id}`}
-							>
-								<TrashIcon className="h-6 w-6"/>
-							</button>
 						</div>
 
 						{cred.ollamaModels?.map((model, modelIndex) => (
@@ -457,14 +436,7 @@ export function ControlledOllamaModelForm({
 	);
 }
 
-
-function SettingSection({
-							title,
-							children,
-						}: {
-	title: string;
-	children: React.ReactNode;
-}) {
+function SettingSection({ title, children }: { title: string; children: React.ReactNode }) {
 	return (
 		<section className="space-y-4 mt-6 rounded-lg border bg-gray-100 p-6">
 			<h3 className="font-semibold">{title}</h3>
@@ -472,5 +444,3 @@ function SettingSection({
 		</section>
 	);
 }
-
-
