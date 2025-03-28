@@ -1,5 +1,5 @@
 import React, {createContext, useContext, useState} from "react";
-import {trpc} from "@self-learning/api-client";
+import {getAvailableModelsOnEndpoint, trpc} from "@self-learning/api-client";
 import {FormProvider, useForm} from "react-hook-form";
 import {zodResolver} from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -36,6 +36,45 @@ export function useCredentialsContext() {
 }
 
 export type OllamaCredToggle = Awaited<ReturnType<typeof getCredentials>>[number];
+
+export async function getUpdatedCredentials() {
+	const credentials = await getCredentials();
+
+	const updatedCredentials = await Promise.all(
+		credentials.map(async cred => {
+			const availableModels = await getAvailableModelsOnEndpoint(
+				cred.endpointUrl,
+				cred.token
+			);
+
+			if (!availableModels) {
+				cred = {
+					...cred,
+					available: false
+				};
+				return cred; // Return the original credential if fetch fails
+			}
+
+			const existingModelNames = new Set(cred.ollamaModels.map(model => model.name));
+
+			const newModels = availableModels
+				.filter(modelName => !existingModelNames.has(modelName))
+				.map(modelName => ({
+					id: null,
+					name: modelName,
+					ollamaCredentialsId: cred.id,
+					toggle: false
+				}));
+
+			// Return a new object instead of mutating the original one
+			return {
+				...cred,
+				ollamaModels: [...cred.ollamaModels, ...newModels]
+			};
+		})
+	);
+	return updatedCredentials;
+}
 
 // Fetches stored credentials from the database and returns them in a structured format.
 export async function getCredentials() {

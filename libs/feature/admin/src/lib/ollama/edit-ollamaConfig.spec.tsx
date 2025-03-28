@@ -195,6 +195,67 @@ describe("ai-configuration Components", () => {
 			});
 		});
 
+		it("should call create error toast when required form inputs are empty", async () => {
+			const dummyCredentials: OllamaCredToggle[] = [
+				{
+					id: "",
+					name: "TestModel1",
+					token: "234234334",
+					endpointUrl: "http://test.de",
+					available: true,
+					ollamaModels: [
+						{
+							id: "",
+							name: "",
+							toggle: false,
+							ollamaCredentialsId: ""
+						}
+					]
+				}
+			];
+			const expectedCredentials = {
+				id: null,
+				ollamaModels: [],
+				name: "TestModel1",
+				token: "234234334",
+				endpointUrl: "http://test.de"
+			};
+
+			// Act
+			render(
+				<TestWrapper testCredentials={dummyCredentials}>
+					<OllamaCredentialsFormDialog/>
+				</TestWrapper>
+			);
+
+			const serverAddButton = screen.getByTestId("ServerAddButton");
+
+			await userEvent.click(serverAddButton);
+			await userEvent.click(serverAddButton);
+			await userEvent.click(serverAddButton);
+
+			const form = screen.getByTestId("OllamaCredentialsForm");
+
+			// token is missing
+			const credentialNameInput = screen.getByTestId("CredentialName");
+			const credentialEndpointUrlInput = screen.getByTestId("CredentialUrl");
+
+			await userEvent.type(credentialNameInput, dummyCredentials[0].name);
+			await userEvent.type(credentialEndpointUrlInput, dummyCredentials[0].endpointUrl);
+
+			fireEvent.submit(form);
+
+			// Assert
+			await waitFor(() => {
+				expect(addCredentialMock).toHaveBeenCalledTimes(0);
+				expect(showToast).toHaveBeenCalledWith({
+					type: "error",
+					title: "Fehler",
+					subtitle: "Alle Felder müssen ausgefüllt sein"
+				});
+			});
+		});
+
 		it("should call create error toast if url is added again", async () => {
 			const dummyCredentials: OllamaCredToggle[] = [
 				{
@@ -308,7 +369,7 @@ describe("ai-configuration Components", () => {
 			await userEvent.type(credentialTokenInput, dummyCredentials[0].token);
 			await userEvent.type(credentialEndpointUrlInput, dummyCredentials[0].endpointUrl);
 
-			await act(() => {
+			act(() => {
 				fireEvent.submit(form);
 			})
 
@@ -506,6 +567,7 @@ describe("ai-configuration Components", () => {
 	describe("OllamaModelForm", () => {
 		beforeEach(() => {
 			addModelMock.mockClear();
+			removeCredentialMock.mockClear();
 		});
 
 		it("should load OllamaModel form", async () => {
@@ -791,6 +853,7 @@ describe("ai-configuration Components", () => {
 		beforeEach(() => {
 			addCredentialMock.mockClear();
 			getModelsMock.mockClear();
+			addModelMock.mockClear();
 		});
 		it("should only call add model once when multiple are selected", async () => {
 			const dummyCredentials: OllamaCredToggle[] = [
@@ -855,6 +918,35 @@ describe("ai-configuration Components", () => {
 			await waitFor(() => {
 				expect(addModelMock).toHaveBeenCalledTimes(1);
 				expect(addModelMock).toHaveBeenCalledWith(expectedCredentials);
+			});
+		});
+
+		it("should not call addModel or showToast if model list is empty on submit", async () => {
+			const dummyCredentials: OllamaCredToggle[] = [
+				{
+					id: "1",
+					name: "TestModel1",
+					token: "134234334",
+					endpointUrl: "http://test.de",
+					available: true,
+					ollamaModels: []
+				}
+			];
+
+			// Act
+			render(
+				<TestWrapper testCredentials={dummyCredentials}>
+					<OllamaModelForm/>
+				</TestWrapper>
+			);
+
+			const form = screen.getByTestId(`OllamaModelForm+${dummyCredentials[0].id}`);
+
+			fireEvent.submit(form);
+
+			// Assert
+			await waitFor(() => {
+				expect(addModelMock).toHaveBeenCalledTimes(0);
 			});
 		});
 
