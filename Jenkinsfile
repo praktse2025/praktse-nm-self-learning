@@ -27,12 +27,12 @@ pipeline {
     environment {
         API_VERSION = packageJson.getVersion() // package.json must be in the root level in order for this to work
         TZ = 'Europe/Berlin'
-        
+
         NX_BASE = 'master'
         NX_HEAD = 'HEAD'
         NX_BRANCH = env.BRANCH_NAME.replace('PR-', '')
         NX_REJECT_UNKNOWN_LOCAL_CACHE = 0
-        
+
         NODE_DOCKER_IMAGE = 'node:21-bullseye'
         TARGET_PREFIX = 'ghcr.io/e-learning-by-sse/nm-self-learning'
         // we need the .npm and .cache folders in a separate volume to avoid permission issues during npm install
@@ -94,19 +94,6 @@ pipeline {
                                     sh "env TZ=${env.TZ} npx nx affected --base=${lastSuccessSHA} -t lint test build e2e-ci"
                                 }
                         }
-                        ssedocker {
-                            create {
-                                target "${env.TARGET_PREFIX}:unstable"
-                            }
-                            publish {}
-                        }
-                    }
-                    post {
-                        success {
-                            catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                                staging02ssh "bash /opt/update-compose-project.sh selflearn-unstable"
-                            }
-                        }
                     }
                 }
 
@@ -129,21 +116,6 @@ pipeline {
                                 sh 'npm run format:check'
                                 sh 'npm run seed'
                                 sh "env TZ=${env.TZ} npx nx affected --base origin/${env.CHANGE_TARGET} -t lint test build e2e-ci"
-                            }
-                        }
-                        ssedocker {
-                            create {
-                                target "${env.TARGET_PREFIX}:${env.VERSION}"
-                            }
-                        }
-                    }
-                    post {
-                        success {
-                            catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
-                                sshagent(['STM-SSH-DEMO']) {
-                                    sh "docker save ${env.TARGET_PREFIX}:${env.VERSION} | ssh -o StrictHostKeyChecking=no -l jenkins 147.172.178.45 'docker load'"
-                                }
-                                staging02ssh "python3 /opt/selflearn-branches/demo-manager.py new-container:${env.VERSION}:${env.BRANCH_NAME} generate-html"
                             }
                         }
                     }
@@ -173,17 +145,9 @@ pipeline {
                                 }
                                 def releaseTag = ''
                                 if (params.PUBLISH_IMAGE_TAG == 'NONE') {
-                                    releaseTag = "${apiVersion}" 
+                                    releaseTag = "${apiVersion}"
                                 } else {
                                     releaseTag = "${params.PUBLISH_IMAGE_TAG}"
-                                }
-                                ssedocker {
-                                    create {
-                                        target "${env.TARGET_PREFIX}:${apiVersion}"
-                                    }
-                                    publish {
-                                        tag "${releaseTag}"
-                                    }
                                 }
                             }
                         }
