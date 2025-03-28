@@ -94,12 +94,6 @@ pipeline {
                                     sh "env TZ=${env.TZ} npx nx affected --base=${lastSuccessSHA} -t lint test build e2e-ci"
                                 }
                         }
-                        ssedocker {
-                            create {
-                                target "${env.TARGET_PREFIX}:unstable"
-                            }
-                            publish {}
-                        }
                     }
                 }
 
@@ -122,21 +116,6 @@ pipeline {
                                 sh 'npm run format:check'
                                 sh 'npm run seed'
                                 sh "env TZ=${env.TZ} npx nx affected --base origin/${env.CHANGE_TARGET} -t lint test build e2e-ci"
-                            }
-                        }
-                        ssedocker {
-                            create {
-                                target "${env.TARGET_PREFIX}:${env.VERSION}"
-                            }
-                        }
-                    }
-                    post {
-                        success {
-                            catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
-                                sshagent(['STM-SSH-DEMO']) {
-                                    sh "docker save ${env.TARGET_PREFIX}:${env.VERSION} | ssh -o StrictHostKeyChecking=no -l jenkins 147.172.178.45 'docker load'"
-                                }
-                                staging02ssh "python3 /opt/selflearn-branches/demo-manager.py new-container:${env.VERSION}:${env.BRANCH_NAME} generate-html"
                             }
                         }
                     }
@@ -169,14 +148,6 @@ pipeline {
                                     releaseTag = "${apiVersion}"
                                 } else {
                                     releaseTag = "${params.PUBLISH_IMAGE_TAG}"
-                                }
-                                ssedocker {
-                                    create {
-                                        target "${env.TARGET_PREFIX}:${apiVersion}"
-                                    }
-                                    publish {
-                                        tag "${releaseTag}"
-                                    }
                                 }
                             }
                         }
