@@ -393,7 +393,7 @@ export function ControlledOllamaModelForm({
 							aria-label="Server löschen"
 							data-testid={`CredentialsRemoveButton+${cred.id}`}
 						>
-							<TrashIcon className="h-6 w-6" />
+							<TrashIcon className="h-7 w-7" />
 						</button>
 
 						<div className="flex justify-between items-center">

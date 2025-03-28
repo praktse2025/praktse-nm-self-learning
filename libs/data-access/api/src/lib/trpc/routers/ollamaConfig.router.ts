@@ -19,14 +19,7 @@ export const ollamaConfigRouter = t.router({
 						token: input.token,
 						name: input.name,
 						endpointUrl: input.endpointUrl,
-						ollamaModels: input.ollamaModels
-							? {
-								create: input.ollamaModels.map(model => ({
-									name: model.name,
-									ollamaCredentialsId: input.id
-								}))
-							}
-							: undefined
+						ollamaModels: undefined,
 					}, select: {id: true, token: true, name: true, endpointUrl: true, ollamaModels: true}
 				});
 			} catch (error) {
