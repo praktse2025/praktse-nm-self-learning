@@ -51,6 +51,12 @@ export default function AdminPage() {
 					imageElement={<PersonalInformationSvg />}
 					title="Nutzer:innen verwalten"
 				/>
+
+				<Card
+					href="/admin/ai-config"
+					imageElement={<TutorialSvg />}
+					title="AI-Konfiguration"
+				/>
 			</div>
 			<div className="text-center text-sm text-gray-500 mt-8">
 				{`App Version: ${appVersion}`}

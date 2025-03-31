@@ -22,6 +22,6 @@ services:
             - dev_db_data:/var/lib/postgresql/data
 volumes:
     dev_db_data:
-    codebase: 
+    codebase:
       name: ${VOLUME_NAME}
       external: true
