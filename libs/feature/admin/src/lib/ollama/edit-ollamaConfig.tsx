@@ -87,6 +87,8 @@ export async function getCredentials() {
 		}
 	});
 
+	console.log(credentials);
+
 	return credentials.map(creds => {
 		return {
 			...creds,

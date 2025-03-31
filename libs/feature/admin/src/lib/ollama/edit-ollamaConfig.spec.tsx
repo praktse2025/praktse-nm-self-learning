@@ -5,7 +5,7 @@ import {
 	ControlledOllamaCredentialsFormDialog, ControlledOllamaModelForm,
 	CredentialsContext,
 	CredentialsContextType,
-	getCredentials,
+	getCredentials, getUpdatedCredentials,
 	OllamaCredentialsFormDialog,
 	OllamaCredToggle,
 	OllamaModelForm,
@@ -60,14 +60,33 @@ jest.mock("@self-learning/api-client", () => ({
 	}
 }));
 
-
 jest.mock("@self-learning/database", () => ({
 	database: {
 		ollamaCredentials: {
-			findMany: jest.fn(),
+			findMany: () => [
+				{
+					id: "1",
+					endpointUrl: "https://example.com",
+					name: "sdfsdf",
+					token: "abc123",
+					ollamaModels: [{id: null, name: "model1", ollamaCredentialsId: "1", toggle: false}],
+					available: true
+				}
+			],
 		},
 	},
 }));
+
+global.fetch = jest.fn(() =>
+	Promise.resolve({
+		json: () => Promise.resolve({message: "Hello, world!"}),
+	})
+) as jest.Mock;
+
+/*
+jest.mock("@self-learning/admin", () => ({
+	getCredentials: jest.fn() as jest.MockedFunction<typeof getCredentials>,
+}));*/
 
 function TestWrapper({testCredentials, children}: { testCredentials: OllamaCredToggle[], children: any }) {
 	const [credentials, setCredentials] = useState<OllamaCredToggle[]>(testCredentials);
@@ -79,6 +98,88 @@ function TestWrapper({testCredentials, children}: { testCredentials: OllamaCredT
 }
 
 describe("ai-configuration Components", () => {
+	describe("getUpdatedCredentials", () => {
+		afterEach(() => {
+			jest.clearAllMocks();
+		});
+
+		it("should update credentials with new models if available", async () => {
+			/*findCredentialsMock.mockResolvedValue([
+				{
+					id: "1",
+					endpointUrl: "https://example.com",
+					name: "sdfsdf",
+					token: "abc123",
+					ollamaModels: [{id: null, name: "model1", ollamaCredentialsId: "1", toggle: false}],
+					available: true
+				}
+			])*/
+
+			const result = await getUpdatedCredentials();
+
+			expect(result).toEqual([
+				{
+					id: 1,
+					endpointUrl: "https://example.com",
+					token: "abc123",
+					ollamaModels: [
+						{name: "existing-model"},
+						{id: null, name: "new-model", ollamaCredentialsId: 1, toggle: false}
+					]
+				}
+			]);
+		});
+
+		it("should set available to false if models cannot be fetched", async () => {
+			getCredentials.mockResolvedValue([
+				{
+					id: 2,
+					endpointUrl: "https://example.com",
+					token: "xyz789",
+					ollamaModels: []
+				}
+			]);
+
+
+			const result = await getUpdatedCredentials();
+
+			expect(result).toEqual([
+				{
+					id: 2,
+					endpointUrl: "https://example.com",
+					token: "xyz789",
+					ollamaModels: [],
+					available: false
+				}
+			]);
+		});
+
+		it("should not add duplicate models", async () => {
+			getCredentials.mockResolvedValue([
+				{
+					id: 3,
+					endpointUrl: "https://example.com",
+					token: "token123",
+					ollamaModels: [{name: "model1"}]
+				}
+			]);
+
+
+			const result = await getUpdatedCredentials();
+
+			expect(result).toEqual([
+				{
+					id: 3,
+					endpointUrl: "https://example.com",
+					token: "token123",
+					ollamaModels: [
+						{name: "model1"},
+						{id: null, name: "model2", ollamaCredentialsId: 3, toggle: false}
+					]
+				}
+			]);
+		});
+	});
 	describe("OllamaCredentialsForm", () => {
 		beforeEach(() => {
 			addCredentialMock.mockClear();
